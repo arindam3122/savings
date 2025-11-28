@@ -102,7 +102,7 @@ footer{text-align:center;color:var(--muted);padding:15px;font-size:13px}
 </div>
 
 <div class="section" id="weeklySection" style="display:none">
-  <h3>🗓 Weekly Spending (Selected Month)</h3>
+  <h3 id="weeklyTitle">🗓 Weekly Spending</h3>
   <canvas id="weeklyChart"></canvas>
 </div>
 
@@ -118,7 +118,7 @@ footer{text-align:center;color:var(--muted);padding:15px;font-size:13px}
 <script>
 let rawData=[],filteredData=[],monthChart,weeklyChart;
 
-// -------- HELPERS --------
+// ---------- HELPERS ----------
 function getValue(row,key){
   const k=Object.keys(row).find(x=>x.trim().toLowerCase()===key.toLowerCase());
   return k?row[k]:0;
@@ -134,7 +134,7 @@ function fmt(d){
   return `${String(d.getDate()).padStart(2,'0')}:${String(d.getMonth()+1).padStart(2,'0')}:${d.getFullYear()}`;
 }
 
-// -------- LOAD FILE --------
+// ---------- FILE LOAD ----------
 fileInput.addEventListener("change",e=>{
   const r=new FileReader();
   r.onload=x=>{
@@ -146,7 +146,7 @@ fileInput.addEventListener("change",e=>{
   r.readAsArrayBuffer(e.target.files[0]);
 });
 
-// -------- FILTERS --------
+// ---------- FILTERS ----------
 function loadFilters(){
   const ys=new Set(),ms=new Set();
   rawData.forEach(r=>{
@@ -170,12 +170,12 @@ function applyFilter(){
   renderAll();
 }
 
-// -------- RENDER --------
+// ---------- RENDER ----------
 function renderAll(){
-  renderTotals();monthWise();merchantWise();weeklyWise();
+  totals();monthWise();merchantWise();weeklyWise();
 }
 
-function renderTotals(){
+function totals(){
   let c=0,d=0;
   filteredData.forEach(r=>{
     c+=+getValue(r,"credit")||0;
@@ -186,42 +186,52 @@ function renderTotals(){
   saving.innerText=`₹${(c-d).toFixed(2)}`;
 }
 
-// -------- MONTH WISE --------
+// ---------- MONTH WISE ----------
 function monthWise(){
   const map={};
   filteredData.forEach(r=>{
     const d=parseDate(getValue(r,"date"));
-    const k=new Date(d.getFullYear(),d.getMonth(),1).toISOString();
-    if(!map[k]) map[k]={c:0,d:0,date:new Date(d.getFullYear(),d.getMonth(),1)};
-    map[k].c+=+getValue(r,"credit")||0;
-    map[k].d+=+getValue(r,"debit")||0;
+    const k=new Date(d.getFullYear(),d.getMonth(),1);
+    const key=k.toISOString();
+    if(!map[key]) map[key]={c:0,d:0,date:k};
+    map[key].c+=+getValue(r,"credit")||0;
+    map[key].d+=+getValue(r,"debit")||0;
   });
 
   monthTable.innerHTML='<tr><th>Month</th><th>Credit</th><th>Debit</th><th>Saving</th></tr>';
   const labels=[],vals=[];
   Object.values(map).sort((a,b)=>a.date-b.date).forEach(v=>{
     const s=v.c-v.d;
-    const l=fmt(v.date);
-    monthTable.innerHTML+=`<tr><td>${l}</td><td>${v.c}</td><td>${v.d}</td><td>${s}</td></tr>`;
-    labels.push(l);vals.push(s);
+    const lab=fmt(v.date);
+    monthTable.innerHTML+=`<tr><td>${lab}</td><td>${v.c}</td><td>${v.d}</td><td>${s}</td></tr>`;
+    labels.push(lab);vals.push(s);
   });
 
   if(monthChart)monthChart.destroy();
-  monthChart=new Chart(monthChart||document.getElementById("monthChart"),{
+  monthChart=new Chart(document.getElementById("monthChart"),{
     type:"line",
     data:{labels,datasets:[{label:"Net Saving",data:vals,borderWidth:3,tension:.35}]}
   });
 }
 
-// -------- WEEKLY (NEW FEATURE) --------
+// ---------- WEEKLY ----------
 function weeklyWise(){
-  if(monthFilter.value===""){
+  const m=monthFilter.value;
+  if(m===""){
     document.getElementById("weeklySection").style.display="none";
     return;
   }
-  document.getElementById("weeklySection").style.display="block";
-  const weeks=[0,0,0,0,0];
 
+  document.getElementById("weeklySection").style.display="block";
+
+  const year=yearFilter.value ||
+    parseDate(getValue(filteredData[0],"date")).getFullYear();
+
+  const monthName=new Date(0,m).toLocaleString("en",{month:"long"});
+
+  weeklyTitle.innerText=`🗓 Weekly Spending – ${monthName} ${year}`;
+
+  const weeks=[0,0,0,0,0];
   filteredData.forEach(r=>{
     const d=parseDate(getValue(r,"date"));
     const debit=+getValue(r,"debit")||0;
@@ -235,12 +245,15 @@ function weeklyWise(){
     type:"line",
     data:{
       labels:["Week 1","Week 2","Week 3","Week 4","Week 5"],
-      datasets:[{label:"Weekly Spending",data:weeks,borderWidth:3,tension:.35}]
+      datasets:[{
+        label:`Weekly Spending – ${monthName}`,
+        data:weeks,borderWidth:3,tension:.35
+      }]
     }
   });
 }
 
-// -------- MERCHANT --------
+// ---------- MERCHANT ----------
 function merchantWise(){
   const map={};
   filteredData.forEach(r=>{
@@ -248,7 +261,7 @@ function merchantWise(){
     const m=getValue(r,"merchant name");
     if(debit<=0||!m)return;
     const d=parseDate(getValue(r,"date"));
-    if(!map[m])map[m]={t:0,f:d,to:d};
+    if(!map[m]) map[m]={t:0,f:d,to:d};
     map[m].t+=debit;
     if(d<map[m].f)map[m].f=d;
     if(d>map[m].to)map[m].to=d;
