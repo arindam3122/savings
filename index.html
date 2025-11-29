@@ -93,7 +93,7 @@ footer{text-align:center;color:var(--muted);padding:15px;font-size:13px}
   <div class="card credit"><h4>Total Credit</h4><h2 id="credit">₹0</h2></div>
   <div class="card debit"><h4>Total Debit</h4><h2 id="debit">₹0</h2></div>
 
-  <!-- UPDATED: Net Saving + Arrow -->
+  <!-- Net Saving With Arrow -->
   <div class="card saving">
     <h4>Net Saving</h4>
     <h2 id="saving">₹0 <span id="savingArrow"></span></h2>
@@ -122,6 +122,14 @@ footer{text-align:center;color:var(--muted);padding:15px;font-size:13px}
 
 <script>
 let rawData=[],filteredData=[],monthChart,weeklyChart;
+
+// ---------- FORMATTER WITH COMMAS ----------
+function formatNumber(num) {
+    return num.toLocaleString("en-IN", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
 
 // ---------- HELPERS ----------
 function getValue(row,key){
@@ -180,7 +188,7 @@ function renderAll(){
   totals();monthWise();merchantWise();weeklyWise();
 }
 
-// ---------- UPDATED TOTALS WITH ARROWS ----------
+// ---------- TOTALS WITH BIG BOLD SVG ARROWS + COMMA FORMAT ----------
 function totals(){
   let c=0,d=0;
   filteredData.forEach(r=>{
@@ -190,37 +198,36 @@ function totals(){
 
   const net = c - d;
 
-  credit.innerText = `₹${c.toFixed(2)}`;
-  debit.innerText = `₹${d.toFixed(2)}`;
+  credit.innerText = `₹${formatNumber(c)}`;
+  debit.innerText = `₹${formatNumber(d)}`;
 
-  // Update only the number, not the arrow span
-  document.getElementById("saving").childNodes[0].nodeValue = `₹${net.toFixed(2)} `;
+  // Update number only (not arrow span)
+  document.getElementById("saving").childNodes[0].nodeValue = `₹${formatNumber(net)} `;
 
   const arrow = document.getElementById("savingArrow");
 
-if (net > 0) {
-    arrow.innerHTML = `
+  if (net > 0) {
+      arrow.innerHTML = `
         <svg width="28" height="28" viewBox="0 0 24 24" 
              stroke="var(--success)" stroke-width="2.8" 
              fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 19V5" />
             <path d="M5 12l7-7 7 7" />
         </svg>`;
-}
-else if (net < 0) {
-    arrow.innerHTML = `
+  }
+  else if (net < 0) {
+      arrow.innerHTML = `
         <svg width="28" height="28" viewBox="0 0 24 24" 
              stroke="var(--danger)" stroke-width="2.8" 
              fill="none" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 5v14" />
             <path d="M19 12l-7 7-7-7" />
         </svg>`;
+  }
+  else {
+      arrow.innerHTML = "";
+  }
 }
-else {
-    arrow.innerHTML = "";
-}
-}
-
 
 // ---------- MONTH WISE ----------
 function monthWise(){
@@ -239,7 +246,12 @@ function monthWise(){
   Object.values(map).sort((a,b)=>a.date-b.date).forEach(v=>{
     const s=v.c-v.d;
     const lab=fmt(v.date);
-    monthTable.innerHTML+=`<tr><td>${lab}</td><td>${v.c}</td><td>${v.d}</td><td>${s}</td></tr>`;
+    monthTable.innerHTML+=`<tr>
+      <td>${lab}</td>
+      <td>${formatNumber(v.c)}</td>
+      <td>${formatNumber(v.d)}</td>
+      <td>${formatNumber(s)}</td>
+    </tr>`;
     labels.push(lab);vals.push(s);
   });
 
@@ -306,7 +318,7 @@ function merchantWise(){
   merchantTable.innerHTML='<tr><th>Merchant</th><th>Total</th><th>From</th><th>To</th></tr>';
   Object.entries(map).forEach(([k,v])=>{
     merchantTable.innerHTML+=`
-      <tr><td>${k}</td><td>${v.t}</td>
+      <tr><td>${k}</td><td>${formatNumber(v.t)}</td>
       <td>${fmt(v.f)}</td><td>${fmt(v.to)}</td></tr>`;
   });
 }
