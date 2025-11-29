@@ -26,9 +26,38 @@ header{
   background:linear-gradient(135deg,#4f46e5,#6366f1);
   color:#fff;
   padding:26px;
-  text-align:center;
   font-size:26px;
   font-weight:600;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* Modern Search Bar */
+.search-input{
+  padding:12px 42px 12px 16px;
+  border-radius:14px;
+  border:none;
+  font-size:15px;
+  width:300px;
+  background:#ffffffcc;
+  backdrop-filter:blur(8px);
+  box-shadow:0 4px 18px rgba(0,0,0,0.22);
+  outline:none;
+  transition:0.25s;
+}
+
+.search-input:focus{
+  width:340px;
+  box-shadow:0 6px 24px rgba(0,0,0,0.33);
+}
+
+/* Highlight */
+.highlight{
+  background:yellow;
+  font-weight:bold;
+  padding:2px 3px;
+  border-radius:4px;
 }
 
 .container{max-width:1200px;margin:20px auto;padding:20px}
@@ -147,7 +176,28 @@ footer{text-align:center;color:var(--muted);padding:15px}
 
 <body>
 
-<header>📊 Expense & Savings Dashboard</header>
+<header>
+  <div>📊 Expense & Savings Dashboard</div>
+
+  <!-- Search Bar (Merchant Only Search) -->
+  <div style="position:relative;">
+    <input 
+      type="text" 
+      id="searchBar"
+      class="search-input"
+      placeholder="Search merchants..."
+      oninput="merchantSearch()"
+    >
+    <span style="
+      position:absolute;
+      right:14px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:18px;
+      color:#555;
+    ">🔍</span>
+  </div>
+</header>
 
 <div class="container">
 
@@ -209,7 +259,9 @@ footer{text-align:center;color:var(--muted);padding:15px}
 <script>
 let rawData=[],filteredData=[],monthChart,weeklyChart;
 
-/* ---------- HELPERS ---------- */
+/*******************
+  HELPERS
+*******************/
 function formatNumber(n){
   return n.toLocaleString("en-IN",{minimumFractionDigits:2});
 }
@@ -223,7 +275,42 @@ function parseDate(v){
   return new Date(p[2],p[1]-1,p[0]);
 }
 
-/* ---------- UPLOAD ---------- */
+/*******************
+  HIGHLIGHT
+*******************/
+function highlightText(text, query) {
+  if (!query) return text;
+  const regex = new RegExp(`(${query})`, "gi");
+  return text.replace(regex, `<span class="highlight">$1</span>`);
+}
+
+/*******************
+  SEARCH ONLY MERCHANT TABLE
+*******************/
+function merchantSearch() {
+  const q = document.getElementById("searchBar").value.toLowerCase();
+  const merchantRows = merchantTable.getElementsByTagName("tr");
+
+  for (let i = 1; i < merchantRows.length; i++) {
+    const cells = merchantRows[i].getElementsByTagName("td");
+    let match = false;
+
+    for (let j = 0; j < cells.length; j++) {
+      const txt = cells[j].innerText.toLowerCase();
+
+      if (txt.includes(q)) match = true;
+
+      // highlight text
+      cells[j].innerHTML = highlightText(cells[j].innerText, q);
+    }
+
+    merchantRows[i].style.display = match ? "" : "none";
+  }
+}
+
+/*******************
+   FILE UPLOAD
+*******************/
 uploadBox.onclick=()=>fileInput.click();
 
 ["dragenter","dragover"].forEach(e=>{
@@ -262,7 +349,9 @@ function loadExcel(file){
   r.readAsArrayBuffer(file);
 }
 
-/* ---------- FILTERS ---------- */
+/*******************
+   FILTERS
+*******************/
 function loadFilters(){
   const ys=new Set(),ms=new Set();
   rawData.forEach(r=>{
@@ -285,7 +374,9 @@ function applyFilter(){
   renderAll();
 }
 
-/* ---------- RENDER ---------- */
+/*******************
+   RENDER ALL
+*******************/
 function renderAll(){
   totals();
   monthWise();
@@ -293,7 +384,9 @@ function renderAll(){
   merchantWise();
 }
 
-/* ---------- TOTALS ---------- */
+/*******************
+   TOTALS
+*******************/
 function totals(){
   let c=0,d=0;
   filteredData.forEach(r=>{
@@ -325,7 +418,9 @@ function totals(){
   }else savingArrow.innerHTML="";
 }
 
-/* ---------- MONTH & WEEK ---------- */
+/*******************
+   MONTH + WEEK
+*******************/
 function monthWise(){
   const map={};
   filteredData.forEach(r=>{
@@ -376,7 +471,9 @@ function weeklyWise(){
   });
 }
 
-/* ---------- MERCHANT ---------- */
+/*******************
+   MERCHANT TABLE
+*******************/
 function merchantWise(){
   const map={};
   filteredData.forEach(r=>{
