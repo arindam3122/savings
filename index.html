@@ -90,12 +90,18 @@ footer{text-align:center;color:var(--muted);padding:15px;font-size:13px}
 </div>
 
 <div class="summary">
-  <div class="card credit"><h4>Total Credit</h4><h2 id="credit">₹0</h2></div>
-  <div class="card debit"><h4>Total Debit</h4><h2 id="debit">₹0</h2></div>
+  <div class="card credit">
+    <h4 id="creditTitle">Total Credit</h4>
+    <h2 id="credit">₹0</h2>
+  </div>
 
-  <!-- Net Saving With Arrow -->
+  <div class="card debit">
+    <h4 id="debitTitle">Total Debit</h4>
+    <h2 id="debit">₹0</h2>
+  </div>
+
   <div class="card saving">
-    <h4>Net Saving</h4>
+    <h4 id="savingTitle">Net Saving</h4>
     <h2 id="saving">₹0 <span id="savingArrow"></span></h2>
   </div>
 </div>
@@ -123,15 +129,11 @@ footer{text-align:center;color:var(--muted);padding:15px;font-size:13px}
 <script>
 let rawData=[],filteredData=[],monthChart,weeklyChart;
 
-// ---------- FORMATTER WITH COMMAS ----------
-function formatNumber(num) {
-    return num.toLocaleString("en-IN", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
+// ---------- FORMAT ----------
+function formatNumber(num){
+  return num.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
-// ---------- HELPERS ----------
 function getValue(row,key){
   const k=Object.keys(row).find(x=>x.trim().toLowerCase()===key.toLowerCase());
   return k?row[k]:0;
@@ -154,7 +156,8 @@ fileInput.addEventListener("change",e=>{
     const wb=XLSX.read(x.target.result,{type:"array"});
     rawData=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
     filteredData=rawData;
-    loadFilters();renderAll();
+    loadFilters();
+    renderAll();
   };
   r.readAsArrayBuffer(e.target.files[0]);
 });
@@ -164,7 +167,7 @@ function loadFilters(){
   const ys=new Set(),ms=new Set();
   rawData.forEach(r=>{
     const d=parseDate(getValue(r,"date"));
-    ys.add(d.getFullYear());ms.add(d.getMonth());
+    ys.add(d.getFullYear()); ms.add(d.getMonth());
   });
   yearFilter.innerHTML='<option value="">All Years</option>';
   [...ys].sort().forEach(y=>yearFilter.innerHTML+=`<option>${y}</option>`);
@@ -185,10 +188,13 @@ function applyFilter(){
 
 // ---------- RENDER ----------
 function renderAll(){
-  totals();monthWise();merchantWise();weeklyWise();
+  totals();
+  monthWise();
+  merchantWise();
+  weeklyWise();
 }
 
-// ---------- TOTALS WITH BIG BOLD SVG ARROWS + COMMA FORMAT ----------
+// ---------- TOTALS (MONTH + YEAR TITLES) ----------
 function totals(){
   let c=0,d=0;
   filteredData.forEach(r=>{
@@ -196,37 +202,35 @@ function totals(){
     d+=+getValue(r,"debit")||0;
   });
 
-  const net = c - d;
+  const net=c-d;
 
-  credit.innerText = `₹${formatNumber(c)}`;
-  debit.innerText = `₹${formatNumber(d)}`;
+  const year=yearFilter.value;
+  const month=monthFilter.value;
+  let title="All Years";
 
-  // Update number only (not arrow span)
-  document.getElementById("saving").childNodes[0].nodeValue = `₹${formatNumber(net)} `;
-
-  const arrow = document.getElementById("savingArrow");
-
-  if (net > 0) {
-      arrow.innerHTML = `
-        <svg width="28" height="28" viewBox="0 0 24 24" 
-             stroke="var(--success)" stroke-width="2.8" 
-             fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 19V5" />
-            <path d="M5 12l7-7 7 7" />
-        </svg>`;
+  if(year && month!==""){
+    const m=new Date(0,month).toLocaleString("en",{month:"long"});
+    title=`${m} ${year}`;
+  }else if(year){
+    title=`All Months ${year}`;
+  }else if(month!==""){
+    const m=new Date(0,month).toLocaleString("en",{month:"long"});
+    title=`${m} (All Years)`;
   }
-  else if (net < 0) {
-      arrow.innerHTML = `
-        <svg width="28" height="28" viewBox="0 0 24 24" 
-             stroke="var(--danger)" stroke-width="2.8" 
-             fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 5v14" />
-            <path d="M19 12l-7 7-7-7" />
-        </svg>`;
-  }
-  else {
-      arrow.innerHTML = "";
-  }
+
+  creditTitle.innerText=`Total Credit for (${title})`;
+  debitTitle.innerText=`Total Debit for (${title})`;
+  savingTitle.innerText=`Net Saving for (${title})`;
+
+  credit.innerText=`₹${formatNumber(c)}`;
+  debit.innerText=`₹${formatNumber(d)}`;
+  saving.childNodes[0].nodeValue=`₹${formatNumber(net)} `;
+
+  savingArrow.innerHTML=
+    net>0?`<svg width="28" height="28" viewBox="0 0 24 24" stroke="var(--success)" stroke-width="2.8" fill="none">
+      <path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`:
+    net<0?`<svg width="28" height="28" viewBox="0 0 24 24" stroke="var(--danger)" stroke-width="2.8" fill="none">
+      <path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>`:"";
 }
 
 // ---------- MONTH WISE ----------
@@ -234,29 +238,23 @@ function monthWise(){
   const map={};
   filteredData.forEach(r=>{
     const d=parseDate(getValue(r,"date"));
-    const k=new Date(d.getFullYear(),d.getMonth(),1);
-    const key=k.toISOString();
-    if(!map[key]) map[key]={c:0,d:0,date:k};
-    map[key].c+=+getValue(r,"credit")||0;
-    map[key].d+=+getValue(r,"debit")||0;
+    const k=new Date(d.getFullYear(),d.getMonth(),1).toISOString();
+    map[k]=map[k]||{c:0,d:0,date:d};
+    map[k].c+=+getValue(r,"credit")||0;
+    map[k].d+=+getValue(r,"debit")||0;
   });
 
   monthTable.innerHTML='<tr><th>Month</th><th>Credit</th><th>Debit</th><th>Saving</th></tr>';
   const labels=[],vals=[];
   Object.values(map).sort((a,b)=>a.date-b.date).forEach(v=>{
     const s=v.c-v.d;
-    const lab=fmt(v.date);
-    monthTable.innerHTML+=`<tr>
-      <td>${lab}</td>
-      <td>${formatNumber(v.c)}</td>
-      <td>${formatNumber(v.d)}</td>
-      <td>${formatNumber(s)}</td>
-    </tr>`;
+    const lab=new Date(v.date).toLocaleString("en",{month:"short",year:"numeric"});
+    monthTable.innerHTML+=`<tr><td>${lab}</td><td>${formatNumber(v.c)}</td><td>${formatNumber(v.d)}</td><td>${formatNumber(s)}</td></tr>`;
     labels.push(lab);vals.push(s);
   });
 
   if(monthChart)monthChart.destroy();
-  monthChart=new Chart(document.getElementById("monthChart"),{
+  monthChart=new Chart(monthChart=document.getElementById("monthChart"),{
     type:"line",
     data:{labels,datasets:[{label:"Net Saving",data:vals,borderWidth:3,tension:.35}]}
   });
@@ -264,40 +262,25 @@ function monthWise(){
 
 // ---------- WEEKLY ----------
 function weeklyWise(){
-  const m=monthFilter.value;
-  if(m===""){
-    document.getElementById("weeklySection").style.display="none";
-    return;
-  }
+  if(monthFilter.value===""){weeklySection.style.display="none";return;}
+  weeklySection.style.display="block";
 
-  document.getElementById("weeklySection").style.display="block";
-
-  const year=yearFilter.value ||
-    parseDate(getValue(filteredData[0],"date")).getFullYear();
-
-  const monthName=new Date(0,m).toLocaleString("en",{month:"long"});
-
-  weeklyTitle.innerText=`🗓 Weekly Spending – ${monthName} ${year}`;
+  const year=yearFilter.value || parseDate(getValue(filteredData[0],"date")).getFullYear();
+  const m=new Date(0,monthFilter.value).toLocaleString("en",{month:"long"});
+  weeklyTitle.innerText=`🗓 Weekly Spending – ${m} ${year}`;
 
   const weeks=[0,0,0,0,0];
   filteredData.forEach(r=>{
     const d=parseDate(getValue(r,"date"));
-    const debit=+getValue(r,"debit")||0;
-    if(debit<=0)return;
-    const w=Math.min(Math.floor((d.getDate()-1)/7),4);
-    weeks[w]+=debit;
+    const deb=+getValue(r,"debit")||0;
+    if(deb>0) weeks[Math.min(Math.floor((d.getDate()-1)/7),4)]+=deb;
   });
 
   if(weeklyChart)weeklyChart.destroy();
-  weeklyChart=new Chart(document.getElementById("weeklyChart"),{
+  weeklyChart=new Chart(weeklyChart=document.getElementById("weeklyChart"),{
     type:"line",
-    data:{
-      labels:["Week 1","Week 2","Week 3","Week 4","Week 5"],
-      datasets:[{
-        label:`Weekly Spending – ${monthName}`,
-        data:weeks,borderWidth:3,tension:.35
-      }]
-    }
+    data:{labels:["Week 1","Week 2","Week 3","Week 4","Week 5"],
+    datasets:[{label:"Weekly Spending",data:weeks,borderWidth:3,tension:.35}]}
   });
 }
 
@@ -305,21 +288,19 @@ function weeklyWise(){
 function merchantWise(){
   const map={};
   filteredData.forEach(r=>{
-    const debit=+getValue(r,"debit")||0;
-    const m=getValue(r,"merchant name");
-    if(debit<=0||!m)return;
     const d=parseDate(getValue(r,"date"));
-    if(!map[m]) map[m]={t:0,f:d,to:d};
-    map[m].t+=debit;
+    const deb=+getValue(r,"debit")||0;
+    const m=getValue(r,"merchant name");
+    if(deb<=0||!m)return;
+    map[m]=map[m]||{t:0,f:d,to:d};
+    map[m].t+=deb;
     if(d<map[m].f)map[m].f=d;
     if(d>map[m].to)map[m].to=d;
   });
 
   merchantTable.innerHTML='<tr><th>Merchant</th><th>Total</th><th>From</th><th>To</th></tr>';
   Object.entries(map).forEach(([k,v])=>{
-    merchantTable.innerHTML+=`
-      <tr><td>${k}</td><td>${formatNumber(v.t)}</td>
-      <td>${fmt(v.f)}</td><td>${fmt(v.to)}</td></tr>`;
+    merchantTable.innerHTML+=`<tr><td>${k}</td><td>${formatNumber(v.t)}</td><td>${fmt(v.f)}</td><td>${fmt(v.to)}</td></tr>`;
   });
 }
 </script>
