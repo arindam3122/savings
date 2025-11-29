@@ -179,7 +179,7 @@ footer{text-align:center;color:var(--muted);padding:15px}
 <header>
   <div>📊 Expense & Savings Dashboard</div>
 
-  <!-- Search Bar (Merchant Only Search) -->
+  <!-- Search Bar (Merchant Only) -->
   <div style="position:relative;">
     <input 
       type="text" 
@@ -248,7 +248,7 @@ footer{text-align:center;color:var(--muted);padding:15px}
 </div>
 
 <div class="section">
-  <h3>🏪 Merchant-wise Spending</h3>
+  <h3>🏪 Merchant-wise Spending (Full Transaction Log)</h3>
   <table id="merchantTable"></table>
 </div>
 
@@ -259,9 +259,7 @@ footer{text-align:center;color:var(--muted);padding:15px}
 <script>
 let rawData=[],filteredData=[],monthChart,weeklyChart;
 
-/*******************
-  HELPERS
-*******************/
+/* HELPERS */
 function formatNumber(n){
   return n.toLocaleString("en-IN",{minimumFractionDigits:2});
 }
@@ -275,24 +273,20 @@ function parseDate(v){
   return new Date(p[2],p[1]-1,p[0]);
 }
 
-/*******************
-  HIGHLIGHT
-*******************/
+/* HIGHLIGHT */
 function highlightText(text, query) {
   if (!query) return text;
   const regex = new RegExp(`(${query})`, "gi");
   return text.replace(regex, `<span class="highlight">$1</span>`);
 }
 
-/*******************
-  SEARCH ONLY MERCHANT TABLE
-*******************/
+/* SEARCH ONLY MERCHANT TABLE */
 function merchantSearch() {
   const q = document.getElementById("searchBar").value.toLowerCase();
-  const merchantRows = merchantTable.getElementsByTagName("tr");
+  const rows = merchantTable.getElementsByTagName("tr");
 
-  for (let i = 1; i < merchantRows.length; i++) {
-    const cells = merchantRows[i].getElementsByTagName("td");
+  for (let i = 1; i < rows.length; i++) {
+    const cells = rows[i].getElementsByTagName("td");
     let match = false;
 
     for (let j = 0; j < cells.length; j++) {
@@ -300,19 +294,15 @@ function merchantSearch() {
 
       if (txt.includes(q)) match = true;
 
-      // highlight text
       cells[j].innerHTML = highlightText(cells[j].innerText, q);
     }
 
-    merchantRows[i].style.display = match ? "" : "none";
+    rows[i].style.display = match ? "" : "none";
   }
 }
 
-/*******************
-   FILE UPLOAD
-*******************/
+/* FILE UPLOAD */
 uploadBox.onclick=()=>fileInput.click();
-
 ["dragenter","dragover"].forEach(e=>{
   uploadBox.addEventListener(e,ev=>{
     ev.preventDefault();
@@ -349,9 +339,7 @@ function loadExcel(file){
   r.readAsArrayBuffer(file);
 }
 
-/*******************
-   FILTERS
-*******************/
+/* FILTERS */
 function loadFilters(){
   const ys=new Set(),ms=new Set();
   rawData.forEach(r=>{
@@ -374,19 +362,15 @@ function applyFilter(){
   renderAll();
 }
 
-/*******************
-   RENDER ALL
-*******************/
+/* RENDER ALL */
 function renderAll(){
   totals();
   monthWise();
   weeklyWise();
-  merchantWise();
+  merchantWise(); // NEW expanded table
 }
 
-/*******************
-   TOTALS
-*******************/
+/* TOTALS */
 function totals(){
   let c=0,d=0;
   filteredData.forEach(r=>{
@@ -418,9 +402,7 @@ function totals(){
   }else savingArrow.innerHTML="";
 }
 
-/*******************
-   MONTH + WEEK
-*******************/
+/* MONTH + WEEK */
 function monthWise(){
   const map={};
   filteredData.forEach(r=>{
@@ -471,22 +453,37 @@ function weeklyWise(){
   });
 }
 
-/*******************
-   MERCHANT TABLE
-*******************/
+/* MERCHANT TABLE - EXPANDED FULL TRANSACTION LOG */
 function merchantWise(){
-  const map={};
+  merchantTable.innerHTML='<tr><th>Date</th><th>Merchant</th><th>Amount</th></tr>';
+
+  const rows = [];
+
   filteredData.forEach(r=>{
-    const m=getValue(r,"merchant name");
-    const d=+getValue(r,"debit")||0;
-    if(m && d>0){
-      map[m]=(map[m]||0)+d;
+    const d=parseDate(getValue(r,"date"));
+    const merchant=getValue(r,"merchant name");
+    const amt=+getValue(r,"debit")||0;
+
+    if(merchant && amt>0){
+      rows.push({
+        date:d,
+        dateLabel:d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}),
+        merchant,
+        amt
+      });
     }
   });
 
-  merchantTable.innerHTML='<tr><th>Merchant</th><th>Total Spent</th></tr>';
-  Object.entries(map).sort((a,b)=>b[1]-a[1]).forEach(([m,v])=>{
-    merchantTable.innerHTML+=`<tr><td>${m}</td><td>${formatNumber(v)}</td></tr>`;
+  // SORT BY DATE — OLDEST FIRST
+  rows.sort((a,b)=>a.date - b.date);
+
+  rows.forEach(row=>{
+    merchantTable.innerHTML+=`
+      <tr>
+        <td>${row.dateLabel}</td>
+        <td>${row.merchant}</td>
+        <td>₹${formatNumber(row.amt)}</td>
+      </tr>`;
   });
 }
 </script>
