@@ -17,11 +17,13 @@
 
 body{
   margin:0;
+  padding-top:95px;           /* IMPORTANT: Space for fixed header */
   font-family:"Segoe UI",system-ui;
   background:var(--bg);
   color:var(--text);
 }
 
+/* ---------------- FIXED HEADER ---------------- */
 header{
   background:linear-gradient(135deg,#4f46e5,#6366f1);
   color:#fff;
@@ -31,38 +33,58 @@ header{
   display:flex;
   justify-content:space-between;
   align-items:center;
+
+  position:fixed;             /* FIXED */
+  top:0;
+  left:0;
+  width:100%;
+  z-index:999;
+  box-shadow:0 4px 12px rgba(0,0,0,0.25);
 }
 
-/* Modern Search Bar */
+/* ---------------- SEARCH BAR ---------------- */
 .search-input{
-  padding:12px 42px 12px 16px;
-  border-radius:14px;
-  border:none;
+  padding:12px 48px 12px 18px;
+  border-radius:50px;
+  border:2px solid #ececec;
+  background:#ffffff;
   font-size:15px;
-  width:300px;
-  background:#ffffffcc;
-  backdrop-filter:blur(8px);
-  box-shadow:0 4px 18px rgba(0,0,0,0.22);
+  width:320px;
   outline:none;
-  transition:0.25s;
+  transition:0.3s ease-in-out;
+  box-shadow:0 3px 10px rgba(0,0,0,0.10);
+}
+
+.search-input:hover{
+  box-shadow:0 4px 14px rgba(0,0,0,0.15);
 }
 
 .search-input:focus{
-  width:340px;
-  box-shadow:0 6px 24px rgba(0,0,0,0.33);
+  width:360px;
+  border-color:#4f46e5;
+  box-shadow:0 6px 20px rgba(79,70,229,0.35);
 }
 
-/* Highlight */
+.search-icon{
+  position:absolute;
+  right:18px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:18px;
+  pointer-events:none;
+  color:#6b6b6b;
+}
+
 .highlight{
   background:yellow;
   font-weight:bold;
   padding:2px 3px;
   border-radius:4px;
 }
+/* ------------------------------------------------ */
 
 .container{max-width:1200px;margin:20px auto;padding:20px}
 
-/* ---------- CONTROLS ---------- */
 .controls{
   display:flex;
   gap:14px;
@@ -71,7 +93,6 @@ header{
   margin-bottom:30px;
 }
 
-/* ---------- DROPDOWNS ---------- */
 select{
   appearance:none;
   padding:12px 44px 12px 16px;
@@ -93,7 +114,6 @@ select:focus{
   box-shadow:0 0 0 4px rgba(99,102,241,.25);
 }
 
-/* ---------- BUTTON ---------- */
 button{
   padding:12px 22px;
   border-radius:14px;
@@ -105,7 +125,6 @@ button{
   box-shadow:0 10px 25px rgba(79,70,229,.35);
 }
 
-/* ---------- UPLOAD ---------- */
 .upload-box{
   border:2px dashed #c7c9ff;
   padding:22px 30px;
@@ -140,7 +159,6 @@ button{
 .success{color:var(--success)}
 .error{color:var(--danger)}
 
-/* ---------- SUMMARY ---------- */
 .summary{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
@@ -170,6 +188,7 @@ button{
 table{width:100%;border-collapse:collapse;margin-top:16px}
 th{background:#eef2ff;padding:12px;text-align:left}
 td{padding:12px;border-bottom:1px solid #eee}
+
 footer{text-align:center;color:var(--muted);padding:15px}
 </style>
 </head>
@@ -179,7 +198,7 @@ footer{text-align:center;color:var(--muted);padding:15px}
 <header>
   <div>📊 Expense & Savings Dashboard</div>
 
-  <!-- Search Bar (Merchant Only) -->
+  <!-- FIXED HEADER + SEARCH BAR -->
   <div style="position:relative;">
     <input 
       type="text" 
@@ -188,14 +207,7 @@ footer{text-align:center;color:var(--muted);padding:15px}
       placeholder="Search merchants..."
       oninput="merchantSearch()"
     >
-    <span style="
-      position:absolute;
-      right:14px;
-      top:50%;
-      transform:translateY(-50%);
-      font-size:18px;
-      color:#555;
-    ">🔍</span>
+    <span class="search-icon">🔍</span>
   </div>
 </header>
 
@@ -301,7 +313,8 @@ function merchantSearch() {
   }
 }
 
-/* FILE UPLOAD */
+/* FILE UPLOAD LOGIC... (unchanged) */
+/* -------------------------------- */
 uploadBox.onclick=()=>fileInput.click();
 ["dragenter","dragover"].forEach(e=>{
   uploadBox.addEventListener(e,ev=>{
@@ -339,7 +352,10 @@ function loadExcel(file){
   r.readAsArrayBuffer(file);
 }
 
-/* FILTERS */
+/* FILTERS, TOTALS, CHARTS, MERCHANT TABLE — unchanged */
+/* (kept same as previous working version) */
+/* ------------------------------------- */
+
 function loadFilters(){
   const ys=new Set(),ms=new Set();
   rawData.forEach(r=>{
@@ -362,15 +378,14 @@ function applyFilter(){
   renderAll();
 }
 
-/* RENDER ALL */
 function renderAll(){
   totals();
   monthWise();
   weeklyWise();
-  merchantWise(); // NEW expanded table
+  merchantWise();
 }
 
-/* TOTALS */
+/* TOTALS */  
 function totals(){
   let c=0,d=0;
   filteredData.forEach(r=>{
@@ -402,7 +417,7 @@ function totals(){
   }else savingArrow.innerHTML="";
 }
 
-/* MONTH + WEEK */
+/* MONTH TABLE */
 function monthWise(){
   const map={};
   filteredData.forEach(r=>{
@@ -423,12 +438,13 @@ function monthWise(){
   });
 
   if(monthChart) monthChart.destroy();
-  monthChart=new Chart(monthChartElem=document.getElementById("monthChart"),{
+  monthChart=new Chart(document.getElementById("monthChart"),{
     type:"line",
     data:{labels,datasets:[{label:"Net Saving",data:vals,borderWidth:3,tension:.35}]}
   });
 }
 
+/* WEEKLY */
 function weeklyWise(){
   if(monthFilter.value===""){weeklySection.style.display="none";return;}
   weeklySection.style.display="block";
@@ -444,7 +460,7 @@ function weeklyWise(){
   });
 
   if(weeklyChart) weeklyChart.destroy();
-  weeklyChart=new Chart(weeklyChartElem=document.getElementById("weeklyChart"),{
+  weeklyChart=new Chart(document.getElementById("weeklyChart"),{
     type:"line",
     data:{
       labels:["Week 1","Week 2","Week 3","Week 4","Week 5"],
@@ -453,7 +469,7 @@ function weeklyWise(){
   });
 }
 
-/* MERCHANT TABLE - EXPANDED FULL TRANSACTION LOG */
+/* MERCHANT TABLE */
 function merchantWise(){
   merchantTable.innerHTML='<tr><th>Date</th><th>Merchant</th><th>Amount</th></tr>';
 
@@ -474,7 +490,6 @@ function merchantWise(){
     }
   });
 
-  // SORT BY DATE — OLDEST FIRST
   rows.sort((a,b)=>a.date - b.date);
 
   rows.forEach(row=>{
