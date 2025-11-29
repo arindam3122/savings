@@ -9,70 +9,139 @@
 
 <style>
 :root{
-  --bg:#f5f7fb;--card:#fff;--primary:#4f46e5;
-  --success:#16a34a;--danger:#dc2626;
-  --text:#1f2937;--muted:#6b7280;
+  --bg:#f5f7fb; --card:#fff;
+  --primary:#4f46e5; --success:#16a34a; --danger:#dc2626;
+  --text:#1f2937; --muted:#6b7280;
 }
 *{box-sizing:border-box}
 
 body{
-  margin:0;font-family:"Segoe UI",system-ui;
-  background:var(--bg);color:var(--text);
+  margin:0;
+  font-family:"Segoe UI",system-ui;
+  background:var(--bg);
+  color:var(--text);
 }
 
 header{
   background:linear-gradient(135deg,#4f46e5,#6366f1);
-  color:#fff;padding:26px;text-align:center;
-  font-size:26px;font-weight:600;
+  color:#fff;
+  padding:26px;
+  text-align:center;
+  font-size:26px;
+  font-weight:600;
 }
 
 .container{max-width:1200px;margin:20px auto;padding:20px}
 
+/* ---------- CONTROLS ---------- */
 .controls{
-  display:flex;gap:10px;justify-content:center;
-  flex-wrap:wrap;margin-bottom:25px;
+  display:flex;
+  gap:14px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-bottom:30px;
 }
 
-input,select,button{
-  padding:10px 14px;border-radius:8px;
-  border:1px solid #ddd;font-size:14px;
+/* ---------- DROPDOWNS ---------- */
+select{
+  appearance:none;
+  padding:12px 44px 12px 16px;
+  border-radius:14px;
+  border:1.8px solid #e5e7eb;
+  background:#fff
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")
+    no-repeat right 14px center;
+  background-size:18px;
+  font-size:14px;
+  font-weight:500;
+  min-width:150px;
+  cursor:pointer;
+  box-shadow:0 8px 22px rgba(0,0,0,.06);
 }
-button{background:var(--primary);color:#fff;border:none;cursor:pointer}
-button:hover{opacity:.9}
+select:focus{
+  outline:none;
+  border-color:#4f46e5;
+  box-shadow:0 0 0 4px rgba(99,102,241,.25);
+}
 
+/* ---------- BUTTON ---------- */
+button{
+  padding:12px 22px;
+  border-radius:14px;
+  border:none;
+  background:var(--primary);
+  color:#fff;
+  font-weight:500;
+  cursor:pointer;
+  box-shadow:0 10px 25px rgba(79,70,229,.35);
+}
+
+/* ---------- UPLOAD ---------- */
+.upload-box{
+  border:2px dashed #c7c9ff;
+  padding:22px 30px;
+  border-radius:18px;
+  background:#eef2ff;
+  cursor:pointer;
+  min-width:280px;
+  text-align:center;
+}
+.upload-box.dragover{
+  background:#e0e7ff;
+  border-color:#4f46e5;
+}
+.upload-content{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+}
+.upload-icon{font-size:40px}
+.upload-text{font-weight:500;color:#3730a3}
+.upload-text span{font-size:13px;color:#6b7280}
+.loader{
+  width:36px;height:36px;
+  border:4px solid #c7d2fe;
+  border-top-color:#4f46e5;
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.upload-status{font-size:14px;font-weight:500}
+.success{color:var(--success)}
+.error{color:var(--danger)}
+
+/* ---------- SUMMARY ---------- */
 .summary{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:20px;margin-bottom:30px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:22px;
+  margin-bottom:30px;
 }
-
 .card{
-  background:var(--card);padding:22px;border-radius:16px;
-  box-shadow:0 12px 28px rgba(0,0,0,.08);
+  background:var(--card);
+  padding:24px;
+  border-radius:18px;
+  box-shadow:0 14px 32px rgba(0,0,0,.08);
 }
 .card h4{margin:0;color:var(--muted)}
-.card h2{margin-top:10px;font-size:28px}
+.card h2{margin-top:12px;font-size:30px}
 .credit h2{color:var(--success)}
 .debit h2{color:var(--danger)}
 .saving h2{color:var(--primary)}
 
 .section{
-  background:var(--card);padding:22px;border-radius:16px;
-  box-shadow:0 12px 28px rgba(0,0,0,.08);
+  background:var(--card);
+  padding:24px;
+  border-radius:18px;
+  box-shadow:0 14px 32px rgba(0,0,0,.08);
   margin-bottom:30px;
 }
 
-table{
-  width:100%;border-collapse:collapse;margin-top:15px;font-size:14px;
-}
-th{
-  background:#eef2ff;color:#3730a3;
-  padding:10px;text-align:left;
-}
-td{padding:10px;border-bottom:1px solid #eee}
-tr:nth-child(even){background:#fafafa}
-
-canvas{margin-top:20px}
-footer{text-align:center;color:var(--muted);padding:15px;font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:16px}
+th{background:#eef2ff;padding:12px;text-align:left}
+td{padding:12px;border-bottom:1px solid #eee}
+footer{text-align:center;color:var(--muted);padding:15px}
 </style>
 </head>
 
@@ -83,7 +152,18 @@ footer{text-align:center;color:var(--muted);padding:15px;font-size:13px}
 <div class="container">
 
 <div class="controls">
-  <input type="file" id="fileInput" accept=".xls,.xlsx">
+  <div class="upload-box" id="uploadBox">
+    <input type="file" id="fileInput" accept=".xls,.xlsx" hidden>
+    <div class="upload-content" id="uploadContent">
+      <div class="upload-icon">📊</div>
+      <div class="upload-text">
+        Drag & drop Excel file here
+        <span>or click to browse</span>
+      </div>
+    </div>
+    <div class="upload-status" id="uploadStatus"></div>
+  </div>
+
   <select id="yearFilter"><option value="">All Years</option></select>
   <select id="monthFilter"><option value="">All Months</option></select>
   <button onclick="applyFilter()">Apply Filter</button>
@@ -129,52 +209,71 @@ footer{text-align:center;color:var(--muted);padding:15px;font-size:13px}
 <script>
 let rawData=[],filteredData=[],monthChart,weeklyChart;
 
-// ---------- FORMAT ----------
-function formatNumber(num){
-  return num.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+/* ---------- HELPERS ---------- */
+function formatNumber(n){
+  return n.toLocaleString("en-IN",{minimumFractionDigits:2});
 }
-
-function getValue(row,key){
-  const k=Object.keys(row).find(x=>x.trim().toLowerCase()===key.toLowerCase());
-  return k?row[k]:0;
+function getValue(r,k){
+  const x=Object.keys(r).find(v=>v.trim().toLowerCase()===k.toLowerCase());
+  return x?r[x]:0;
 }
-
 function parseDate(v){
   if(typeof v==="number") return new Date((v-25569)*86400*1000);
   const p=v.split("-");
   return new Date(p[2],p[1]-1,p[0]);
 }
 
-function fmt(d){
-  return `${String(d.getDate()).padStart(2,'0')}:${String(d.getMonth()+1).padStart(2,'0')}:${d.getFullYear()}`;
-}
+/* ---------- UPLOAD ---------- */
+uploadBox.onclick=()=>fileInput.click();
 
-// ---------- FILE LOAD ----------
-fileInput.addEventListener("change",e=>{
+["dragenter","dragover"].forEach(e=>{
+  uploadBox.addEventListener(e,ev=>{
+    ev.preventDefault();
+    uploadBox.classList.add("dragover");
+  });
+});
+["dragleave","drop"].forEach(e=>{
+  uploadBox.addEventListener(e,ev=>{
+    ev.preventDefault();
+    uploadBox.classList.remove("dragover");
+  });
+});
+uploadBox.addEventListener("drop",e=>{
+  if(e.dataTransfer.files.length) loadExcel(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener("change",()=>{
+  if(fileInput.files.length) loadExcel(fileInput.files[0]);
+});
+
+function loadExcel(file){
+  uploadContent.innerHTML='<div class="loader"></div>';
+  uploadStatus.innerText='Loading file...';
+
   const r=new FileReader();
-  r.onload=x=>{
-    const wb=XLSX.read(x.target.result,{type:"array"});
+  r.onload=e=>{
+    const wb=XLSX.read(e.target.result,{type:"array"});
     rawData=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
     filteredData=rawData;
     loadFilters();
     renderAll();
+    uploadContent.innerHTML='<div class="upload-icon">✅</div>';
+    uploadStatus.innerHTML='<span class="success">Loaded '+file.name+'</span>';
   };
-  r.readAsArrayBuffer(e.target.files[0]);
-});
+  r.readAsArrayBuffer(file);
+}
 
-// ---------- FILTERS ----------
+/* ---------- FILTERS ---------- */
 function loadFilters(){
   const ys=new Set(),ms=new Set();
   rawData.forEach(r=>{
     const d=parseDate(getValue(r,"date"));
-    ys.add(d.getFullYear()); ms.add(d.getMonth());
+    ys.add(d.getFullYear());
+    ms.add(d.getMonth());
   });
   yearFilter.innerHTML='<option value="">All Years</option>';
   [...ys].sort().forEach(y=>yearFilter.innerHTML+=`<option>${y}</option>`);
   monthFilter.innerHTML='<option value="">All Months</option>';
-  [...ms].sort().forEach(m=>{
-    monthFilter.innerHTML+=`<option value="${m}">${new Date(0,m).toLocaleString('en',{month:'long'})}</option>`;
-  });
+  [...ms].sort().forEach(m=>monthFilter.innerHTML+=`<option value="${m}">${new Date(0,m).toLocaleString("en",{month:"long"})}</option>`);
 }
 
 function applyFilter(){
@@ -186,37 +285,30 @@ function applyFilter(){
   renderAll();
 }
 
-// ---------- RENDER ----------
+/* ---------- RENDER ---------- */
 function renderAll(){
   totals();
   monthWise();
-  merchantWise();
   weeklyWise();
+  merchantWise();
 }
 
-// ---------- TOTALS (MONTH + YEAR TITLES) ----------
+/* ---------- TOTALS ---------- */
 function totals(){
   let c=0,d=0;
   filteredData.forEach(r=>{
     c+=+getValue(r,"credit")||0;
     d+=+getValue(r,"debit")||0;
   });
-
   const net=c-d;
 
-  const year=yearFilter.value;
-  const month=monthFilter.value;
   let title="All Years";
-
-  if(year && month!==""){
-    const m=new Date(0,month).toLocaleString("en",{month:"long"});
-    title=`${m} ${year}`;
-  }else if(year){
-    title=`All Months ${year}`;
-  }else if(month!==""){
-    const m=new Date(0,month).toLocaleString("en",{month:"long"});
-    title=`${m} (All Years)`;
-  }
+  if(yearFilter.value && monthFilter.value!=="")
+    title=new Date(0,monthFilter.value).toLocaleString("en",{month:"long"})+" "+yearFilter.value;
+  else if(yearFilter.value)
+    title="All Months "+yearFilter.value;
+  else if(monthFilter.value!=="")
+    title=new Date(0,monthFilter.value).toLocaleString("en",{month:"long"})+" (All Years)";
 
   creditTitle.innerText=`Total Credit for (${title})`;
   debitTitle.innerText=`Total Debit for (${title})`;
@@ -226,20 +318,20 @@ function totals(){
   debit.innerText=`₹${formatNumber(d)}`;
   saving.childNodes[0].nodeValue=`₹${formatNumber(net)} `;
 
-  savingArrow.innerHTML=
-    net>0?`<svg width="28" height="28" viewBox="0 0 24 24" stroke="var(--success)" stroke-width="2.8" fill="none">
-      <path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`:
-    net<0?`<svg width="28" height="28" viewBox="0 0 24 24" stroke="var(--danger)" stroke-width="2.8" fill="none">
-      <path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>`:"";
+  if(net>0){
+    savingArrow.innerHTML=`<svg width="26" height="26" viewBox="0 0 24 24" stroke="var(--success)" stroke-width="2.8" fill="none"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`;
+  }else if(net<0){
+    savingArrow.innerHTML=`<svg width="26" height="26" viewBox="0 0 24 24" stroke="var(--danger)" stroke-width="2.8" fill="none"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>`;
+  }else savingArrow.innerHTML="";
 }
 
-// ---------- MONTH WISE ----------
+/* ---------- MONTH & WEEK ---------- */
 function monthWise(){
   const map={};
   filteredData.forEach(r=>{
     const d=parseDate(getValue(r,"date"));
-    const k=new Date(d.getFullYear(),d.getMonth(),1).toISOString();
-    map[k]=map[k]||{c:0,d:0,date:d};
+    const k=d.getMonth()+"-"+d.getFullYear();
+    if(!map[k]) map[k]={c:0,d:0,date:d};
     map[k].c+=+getValue(r,"credit")||0;
     map[k].d+=+getValue(r,"debit")||0;
   });
@@ -248,59 +340,56 @@ function monthWise(){
   const labels=[],vals=[];
   Object.values(map).sort((a,b)=>a.date-b.date).forEach(v=>{
     const s=v.c-v.d;
-    const lab=new Date(v.date).toLocaleString("en",{month:"short",year:"numeric"});
+    const lab=v.date.toLocaleString("en",{month:"short",year:"numeric"});
     monthTable.innerHTML+=`<tr><td>${lab}</td><td>${formatNumber(v.c)}</td><td>${formatNumber(v.d)}</td><td>${formatNumber(s)}</td></tr>`;
     labels.push(lab);vals.push(s);
   });
 
-  if(monthChart)monthChart.destroy();
-  monthChart=new Chart(monthChart=document.getElementById("monthChart"),{
+  if(monthChart) monthChart.destroy();
+  monthChart=new Chart(monthChartElem=document.getElementById("monthChart"),{
     type:"line",
     data:{labels,datasets:[{label:"Net Saving",data:vals,borderWidth:3,tension:.35}]}
   });
 }
 
-// ---------- WEEKLY ----------
 function weeklyWise(){
   if(monthFilter.value===""){weeklySection.style.display="none";return;}
   weeklySection.style.display="block";
-
-  const year=yearFilter.value || parseDate(getValue(filteredData[0],"date")).getFullYear();
-  const m=new Date(0,monthFilter.value).toLocaleString("en",{month:"long"});
-  weeklyTitle.innerText=`🗓 Weekly Spending – ${m} ${year}`;
 
   const weeks=[0,0,0,0,0];
   filteredData.forEach(r=>{
     const d=parseDate(getValue(r,"date"));
     const deb=+getValue(r,"debit")||0;
-    if(deb>0) weeks[Math.min(Math.floor((d.getDate()-1)/7),4)]+=deb;
+    if(deb>0){
+      const w=Math.min(Math.floor((d.getDate()-1)/7),4);
+      weeks[w]+=deb;
+    }
   });
 
-  if(weeklyChart)weeklyChart.destroy();
-  weeklyChart=new Chart(weeklyChart=document.getElementById("weeklyChart"),{
+  if(weeklyChart) weeklyChart.destroy();
+  weeklyChart=new Chart(weeklyChartElem=document.getElementById("weeklyChart"),{
     type:"line",
-    data:{labels:["Week 1","Week 2","Week 3","Week 4","Week 5"],
-    datasets:[{label:"Weekly Spending",data:weeks,borderWidth:3,tension:.35}]}
+    data:{
+      labels:["Week 1","Week 2","Week 3","Week 4","Week 5"],
+      datasets:[{label:"Weekly Spending",data:weeks,borderWidth:3,tension:.35}]
+    }
   });
 }
 
-// ---------- MERCHANT ----------
+/* ---------- MERCHANT ---------- */
 function merchantWise(){
   const map={};
   filteredData.forEach(r=>{
-    const d=parseDate(getValue(r,"date"));
-    const deb=+getValue(r,"debit")||0;
     const m=getValue(r,"merchant name");
-    if(deb<=0||!m)return;
-    map[m]=map[m]||{t:0,f:d,to:d};
-    map[m].t+=deb;
-    if(d<map[m].f)map[m].f=d;
-    if(d>map[m].to)map[m].to=d;
+    const d=+getValue(r,"debit")||0;
+    if(m && d>0){
+      map[m]=(map[m]||0)+d;
+    }
   });
 
-  merchantTable.innerHTML='<tr><th>Merchant</th><th>Total</th><th>From</th><th>To</th></tr>';
-  Object.entries(map).forEach(([k,v])=>{
-    merchantTable.innerHTML+=`<tr><td>${k}</td><td>${formatNumber(v.t)}</td><td>${fmt(v.f)}</td><td>${fmt(v.to)}</td></tr>`;
+  merchantTable.innerHTML='<tr><th>Merchant</th><th>Total Spent</th></tr>';
+  Object.entries(map).sort((a,b)=>b[1]-a[1]).forEach(([m,v])=>{
+    merchantTable.innerHTML+=`<tr><td>${m}</td><td>${formatNumber(v)}</td></tr>`;
   });
 }
 </script>
