@@ -261,8 +261,16 @@ footer{text-align:center;color:var(--muted);padding:15px}
 
 <div class="section">
   <h3>🏪 Merchant-wise Spending (Full Transaction Log)</h3>
+
+  <!-- 🔥 AI Insight Box -->
+  <div id="aiInsight" 
+       style="background:#fef3c7; padding:16px; border-radius:14px; margin-bottom:18px; 
+              border-left:6px solid #f59e0b; font-size:15px; display:none;">
+  </div>
+
   <table id="merchantTable"></table>
 </div>
+
 
 </div>
 
@@ -382,7 +390,9 @@ function renderAll(){
   totals();
   monthWise();
   weeklyWise();
-  merchantWise();
+ merchantWise();
+ generateAIInsight();    // <-- AI is activated here
+
 }
 
 /* TOTALS */  
@@ -501,6 +511,52 @@ function merchantWise(){
       </tr>`;
   });
 }
+function generateAIInsight() {
+  const insightBox = document.getElementById("aiInsight");
+  insightBox.style.display = "none";
+
+  const totals = {};
+  let totalSpend = 0;
+
+  filteredData.forEach(r => {
+    const merchant = getValue(r, "merchant name");
+    const amt = +getValue(r, "debit") || 0;
+
+    if (merchant && amt > 0) {
+      totals[merchant] = (totals[merchant] || 0) + amt;
+      totalSpend += amt;
+    }
+  });
+
+  if (Object.keys(totals).length === 0) return;
+
+  // Find highest spending merchant
+  let topMerchant = "";
+  let topAmount = 0;
+
+  for (let m in totals) {
+    if (totals[m] > topAmount) {
+      topMerchant = m;
+      topAmount = totals[m];
+    }
+  }
+
+  const percent = ((topAmount / totalSpend) * 100).toFixed(1);
+
+  insightBox.innerHTML = `
+    🧠 <b>AI Insight:</b><br>
+    Your highest spending is on <b>${topMerchant.toUpperCase()}</b> —
+    <b>₹${formatNumber(topAmount)}</b> 
+    (${percent}% of your total spending).<br><br>
+    ${percent > 40 
+      ? "⚠️ You're highly dependent on this merchant — consider reviewing unnecessary purchases."
+      : "👍 Your expenses look balanced, but reviewing this merchant could still optimize savings."
+    }
+  `;
+
+  insightBox.style.display = "block";
+}
+
 </script>
 
 </body>
