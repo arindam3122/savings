@@ -92,7 +92,12 @@ footer{text-align:center;color:var(--muted);padding:15px;font-size:13px}
 <div class="summary">
   <div class="card credit"><h4>Total Credit</h4><h2 id="credit">₹0</h2></div>
   <div class="card debit"><h4>Total Debit</h4><h2 id="debit">₹0</h2></div>
-  <div class="card saving"><h4>Net Saving</h4><h2 id="saving">₹0</h2></div>
+
+  <!-- UPDATED: Net Saving + Arrow -->
+  <div class="card saving">
+    <h4>Net Saving</h4>
+    <h2 id="saving">₹0 <span id="savingArrow"></span></h2>
+  </div>
 </div>
 
 <div class="section">
@@ -175,16 +180,47 @@ function renderAll(){
   totals();monthWise();merchantWise();weeklyWise();
 }
 
+// ---------- UPDATED TOTALS WITH ARROWS ----------
 function totals(){
   let c=0,d=0;
   filteredData.forEach(r=>{
     c+=+getValue(r,"credit")||0;
     d+=+getValue(r,"debit")||0;
   });
-  credit.innerText=`₹${c.toFixed(2)}`;
-  debit.innerText=`₹${d.toFixed(2)}`;
-  saving.innerText=`₹${(c-d).toFixed(2)}`;
+
+  const net = c - d;
+
+  credit.innerText = `₹${c.toFixed(2)}`;
+  debit.innerText = `₹${d.toFixed(2)}`;
+
+  // Update only the number, not the arrow span
+  document.getElementById("saving").childNodes[0].nodeValue = `₹${net.toFixed(2)} `;
+
+  const arrow = document.getElementById("savingArrow");
+
+if (net > 0) {
+    arrow.innerHTML = `
+        <svg width="28" height="28" viewBox="0 0 24 24" 
+             stroke="var(--success)" stroke-width="2.8" 
+             fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19V5" />
+            <path d="M5 12l7-7 7 7" />
+        </svg>`;
 }
+else if (net < 0) {
+    arrow.innerHTML = `
+        <svg width="28" height="28" viewBox="0 0 24 24" 
+             stroke="var(--danger)" stroke-width="2.8" 
+             fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14" />
+            <path d="M19 12l-7 7-7-7" />
+        </svg>`;
+}
+else {
+    arrow.innerHTML = "";
+}
+}
+
 
 // ---------- MONTH WISE ----------
 function monthWise(){
