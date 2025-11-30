@@ -515,22 +515,30 @@ function generateAIInsight() {
   const insightBox = document.getElementById("aiInsight");
   insightBox.style.display = "none";
 
+  let totalCredit = 0,
+      totalDebit = 0;
+
   const merchantTotals = {};
   let totalSpend = 0;
 
   filteredData.forEach(r => {
     const merchant = getValue(r, "merchant name");
-    const amt = +getValue(r, "debit") || 0;
+    const credit = +getValue(r, "credit") || 0;
+    const debit = +getValue(r, "debit") || 0;
 
-    if (merchant && amt > 0) {
-      merchantTotals[merchant] = (merchantTotals[merchant] || 0) + amt;
-      totalSpend += amt;
+    totalCredit += credit;
+    totalDebit += debit;
+
+    if (merchant && debit > 0) {
+      merchantTotals[merchant] = (merchantTotals[merchant] || 0) + debit;
+      totalSpend += debit;
     }
   });
 
+  const netSaving = totalCredit - totalDebit;
   if (totalSpend === 0) return;
 
-  // find top merchant
+  // Find top merchant
   let topMerchant = "";
   let topAmount = 0;
 
@@ -543,36 +551,38 @@ function generateAIInsight() {
 
   const percent = ((topAmount / totalSpend) * 100).toFixed(1);
 
-  /* 🔹 Dynamic title based on filter */
-let period = "overall";
+  /* Dynamic period title */
+  let period = "overall";
 
-if (!yearFilter.value && monthFilter.value !== "") {
-  // Month only (all years)
-  const monthName = new Date(0, monthFilter.value)
-    .toLocaleString("en", { month: "long" });
-  period = `${monthName} (all years)`;
-}
+  if (!yearFilter.value && monthFilter.value !== "") {
+    const monthName = new Date(0, monthFilter.value)
+      .toLocaleString("en", { month: "long" });
+    period = `${monthName} (all years)`;
+  }
 
-if (yearFilter.value && monthFilter.value === "") {
-  // Year only
-  period = `the year ${yearFilter.value}`;
-}
+  if (yearFilter.value && monthFilter.value === "") {
+    period = `the year ${yearFilter.value}`;
+  }
 
-if (yearFilter.value && monthFilter.value !== "") {
-  // Month + year
-  const monthName = new Date(0, monthFilter.value)
-    .toLocaleString("en", { month: "long" });
-  period = `${monthName} ${yearFilter.value}`;
-}
+  if (yearFilter.value && monthFilter.value !== "") {
+    const monthName = new Date(0, monthFilter.value)
+      .toLocaleString("en", { month: "long" });
+    period = `${monthName} ${yearFilter.value}`;
+  }
 
-
-
+  /* BUILD THE INSIGHT BOX */
   insightBox.innerHTML = `
     🧠 <b>AI Spending Insight</b><br><br>
+
     📌 In <b>${period}</b>, your highest spending was on
     <b>${topMerchant.toUpperCase()}</b> —
     <b>₹${formatNumber(topAmount)}</b>
     <span style="color:#6b7280">(${percent}% of total spending)</span><br><br>
+
+    💰 <b>Your net saving in this period:</b>
+    <span style="color:${netSaving >= 0 ? '#16a34a' : '#dc2626'}; font-weight:600;">
+      ₹${formatNumber(netSaving)}
+    </span><br><br>
 
     ${
       percent > 40
@@ -585,6 +595,7 @@ if (yearFilter.value && monthFilter.value !== "") {
 
   insightBox.style.display = "block";
 }
+
 
 
 </script>
