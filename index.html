@@ -204,6 +204,9 @@ footer{text-align:center;color:var(--muted);padding:15px}
   background: #f3f4f6;
   transition: 0.2s;
 }
+#filterLoader.show {
+  display: flex !important;
+}
 
 </style>
 </head>
@@ -392,14 +395,24 @@ function loadFilters(){
   [...ms].sort().forEach(m=>monthFilter.innerHTML+=`<option value="${m}">${new Date(0,m).toLocaleString("en",{month:"long"})}</option>`);
 }
 
-function applyFilter(){
-  filteredData=rawData.filter(r=>{
-    const d=parseDate(getValue(r,"date"));
-    return (!yearFilter.value||d.getFullYear()==yearFilter.value)
-        && (!monthFilter.value||d.getMonth()==monthFilter.value);
-  });
-  renderAll();
+function applyFilter() {
+  const loader = document.getElementById("filterLoader");
+
+  loader.classList.add("show");   // Show loader
+
+  // Add a slight delay for smooth effect
+  setTimeout(() => {
+    filteredData = rawData.filter(r => {
+      const d = parseDate(getValue(r, "date"));
+      return (!yearFilter.value || d.getFullYear() == yearFilter.value)
+          && (!monthFilter.value || d.getMonth() == monthFilter.value);
+    });
+
+    renderAll();
+    loader.classList.remove("show");   // Hide loader
+  }, 400); // <-- perfect timing for animation
 }
+
 
 function renderAll(){
   totals();
@@ -632,9 +645,21 @@ function generateAIInsight() {
   insightBox.style.display = "block";
 }
 
-
-
 </script>
+<div id="filterLoader" style="
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    display: none;
+">
+    <div class="loader"></div>
+</div>
 
 </body>
 </html>
