@@ -515,7 +515,7 @@ function generateAIInsight() {
   const insightBox = document.getElementById("aiInsight");
   insightBox.style.display = "none";
 
-  const totals = {};
+  const merchantTotals = {};
   let totalSpend = 0;
 
   filteredData.forEach(r => {
@@ -523,39 +523,69 @@ function generateAIInsight() {
     const amt = +getValue(r, "debit") || 0;
 
     if (merchant && amt > 0) {
-      totals[merchant] = (totals[merchant] || 0) + amt;
+      merchantTotals[merchant] = (merchantTotals[merchant] || 0) + amt;
       totalSpend += amt;
     }
   });
 
-  if (Object.keys(totals).length === 0) return;
+  if (totalSpend === 0) return;
 
-  // Find highest spending merchant
+  // find top merchant
   let topMerchant = "";
   let topAmount = 0;
 
-  for (let m in totals) {
-    if (totals[m] > topAmount) {
+  for (let m in merchantTotals) {
+    if (merchantTotals[m] > topAmount) {
       topMerchant = m;
-      topAmount = totals[m];
+      topAmount = merchantTotals[m];
     }
   }
 
   const percent = ((topAmount / totalSpend) * 100).toFixed(1);
 
+  /* 🔹 Dynamic title based on filter */
+let period = "overall";
+
+if (!yearFilter.value && monthFilter.value !== "") {
+  // Month only (all years)
+  const monthName = new Date(0, monthFilter.value)
+    .toLocaleString("en", { month: "long" });
+  period = `${monthName} (all years)`;
+}
+
+if (yearFilter.value && monthFilter.value === "") {
+  // Year only
+  period = `the year ${yearFilter.value}`;
+}
+
+if (yearFilter.value && monthFilter.value !== "") {
+  // Month + year
+  const monthName = new Date(0, monthFilter.value)
+    .toLocaleString("en", { month: "long" });
+  period = `${monthName} ${yearFilter.value}`;
+}
+
+
+
   insightBox.innerHTML = `
-    🧠 <b>AI Insight:</b><br>
-    Your highest spending is on <b>${topMerchant.toUpperCase()}</b> —
-    <b>₹${formatNumber(topAmount)}</b> 
-    (${percent}% of your total spending).<br><br>
-    ${percent > 40 
-      ? "⚠️ You're highly dependent on this merchant — consider reviewing unnecessary purchases."
-      : "👍 Your expenses look balanced, but reviewing this merchant could still optimize savings."
+    🧠 <b>AI Spending Insight</b><br><br>
+    📌 In <b>${period}</b>, your highest spending was on
+    <b>${topMerchant.toUpperCase()}</b> —
+    <b>₹${formatNumber(topAmount)}</b>
+    <span style="color:#6b7280">(${percent}% of total spending)</span><br><br>
+
+    ${
+      percent > 40
+        ? "⚠️ This merchant dominates your expenses. Reducing spend here could significantly improve savings."
+        : percent > 25
+        ? "🔍 This is one of your major expense areas. Tracking it can help optimize your budget."
+        : "✅ Your spending looks well distributed across merchants."
     }
   `;
 
   insightBox.style.display = "block";
 }
+
 
 </script>
 
