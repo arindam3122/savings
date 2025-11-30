@@ -186,6 +186,19 @@ footer{text-align:center;color:var(--muted);padding:15px}
   z-index:2000;
 }
 #filterLoader.show{display:flex;}
+/* FIX: Keep Month-wise chart height controlled */
+#monthChart {
+  width: 100%;
+  max-height: 260px !important;
+  height: 260px !important;
+}
+/* FIX: Keep Weekly Spending chart height controlled */
+#weeklyChart {
+  width: 100%;
+  max-height: 260px !important;
+  height: 260px !important;
+}
+
 </style>
 </head>
 
@@ -194,7 +207,6 @@ footer{text-align:center;color:var(--muted);padding:15px}
 <header>
   <div>📊 Expense & Savings Dashboard</div>
 
-  <!-- Debounced Search -->
   <div style="position:relative;">
     <input 
       type="text" 
@@ -225,9 +237,20 @@ footer{text-align:center;color:var(--muted);padding:15px}
 </div>
 
 <div class="summary">
-  <div class="card credit"><h4 id="creditTitle">Total Credit</h4><h2 id="credit">₹0</h2></div>
-  <div class="card debit"><h4 id="debitTitle">Total Debit</h4><h2 id="debit">₹0</h2></div>
-  <div class="card saving"><h4 id="savingTitle">Net Saving</h4><h2 id="saving">₹0 <span id="savingArrow"></span></h2></div>
+  <div class="card credit">
+    <h4 id="creditTitle">Total Credit</h4>
+    <h2 id="credit">₹0</h2>
+  </div>
+
+  <div class="card debit">
+    <h4 id="debitTitle">Total Debit</h4>
+    <h2 id="debit">₹0</h2>
+  </div>
+
+  <div class="card saving">
+    <h4 id="savingTitle">Net Saving</h4>
+    <h2 id="saving">₹0 <span id="savingArrow"></span></h2>
+  </div>
 </div>
 
 <div class="section">
@@ -258,52 +281,61 @@ footer{text-align:center;color:var(--muted);padding:15px}
 
 <div id="filterLoader"><div class="loader"></div></div>
 <script>
-let rawData=[],filteredData=[],monthChart,weeklyChart;
 
-/* Helper functions */
-function formatNumber(n){ return n.toLocaleString("en-IN",{minimumFractionDigits:2}); }
-function getValue(r,k){ const x=Object.keys(r).find(v=>v.trim().toLowerCase()===k.toLowerCase()); return x?r[x]:0; }
-function parseDate(v){
-  if(typeof v==="number") return new Date((v-25569)*86400*1000);
-  const p=v.split("-"); return new Date(p[2],p[1]-1,p[0]);
+let rawData = [], filteredData = [], monthChart, weeklyChart;
+
+/* ----------------------------- */
+/*         HELPERS               */
+/* ----------------------------- */
+
+function formatNumber(n){
+  return n.toLocaleString("en-IN",{ minimumFractionDigits: 2 });
 }
 
-/* ----------------------- */
-/*     SEARCH (FAST)       */
-/* ----------------------- */
+function getValue(row, key){
+  const match = Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase());
+  return match ? row[match] : 0;
+}
+
+function parseDate(v){
+  if(typeof v === "number"){
+    return new Date((v - 25569) * 86400 * 1000);
+  }
+  const p = v.split("-");
+  return new Date(p[2], p[1]-1, p[0]);
+}
+
+/* ----------------------------- */
+/*     SEARCH (FAST + HIGHLIGHT) */
+/* ----------------------------- */
 
 let searchTimeout = null;
 
-function debouncedMerchantSearch() {
+function debouncedMerchantSearch(){
   clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    merchantSearch();
-  }, 150);
+  searchTimeout = setTimeout(merchantSearch, 150);
 }
 
-function merchantSearch() {
+function merchantSearch(){
   const q = document.getElementById("searchBar").value.toLowerCase();
   const rows = merchantTable.getElementsByTagName("tr");
 
-  for (let i = 1; i < rows.length; i++) {
+  for(let i=1; i < rows.length; i++){
     const merchantCell = rows[i].getElementsByTagName("td")[1];
 
-    // Get original text or save it
     const originalText =
       merchantCell.getAttribute("data-original") || merchantCell.innerText;
 
-    if (!merchantCell.getAttribute("data-original")) {
+    if(!merchantCell.getAttribute("data-original")){
       merchantCell.setAttribute("data-original", originalText);
     }
 
-    const merchantName = originalText.toLowerCase();
+    const name = originalText.toLowerCase();
 
-    // Show/Hide logic
-    if (merchantName.includes(q)) {
+    if(name.includes(q)){
       rows[i].style.display = "";
 
-      // Highlight
-      if (q.trim() !== "") {
+      if(q.trim() !== ""){
         const regex = new RegExp(`(${q})`, "ig");
         merchantCell.innerHTML = originalText.replace(regex, `<mark>$1</mark>`);
       } else {
@@ -317,218 +349,300 @@ function merchantSearch() {
   }
 }
 
-/* ----------------------- */
-/*   FILE UPLOAD (Smooth)  */
-/* ----------------------- */
+/* ----------------------------- */
+/*       FILE UPLOAD (SMOOTH)    */
+/* ----------------------------- */
 
-uploadBox.onclick=()=>fileInput.click();
+uploadBox.onclick = () => fileInput.click();
 
-["dragenter","dragover"].forEach(ev=>{
-  uploadBox.addEventListener(ev,e=>{
+["dragenter","dragover"].forEach(ev => {
+  uploadBox.addEventListener(ev, e=>{
     e.preventDefault();
     uploadBox.classList.add("dragover");
   });
 });
-["dragleave","drop"].forEach(ev=>{
-  uploadBox.addEventListener(ev,e=>{
+
+["dragleave","drop"].forEach(ev => {
+  uploadBox.addEventListener(ev, e=>{
     e.preventDefault();
     uploadBox.classList.remove("dragover");
   });
 });
 
-uploadBox.addEventListener("drop",e=>{
-  if(e.dataTransfer.files.length) loadExcel(e.dataTransfer.files[0]);
+uploadBox.addEventListener("drop", e=>{
+  if(e.dataTransfer.files.length){
+    loadExcel(e.dataTransfer.files[0]);
+  }
 });
-fileInput.addEventListener("change",()=>fileInput.files.length && loadExcel(fileInput.files[0]));
+
+fileInput.addEventListener("change", ()=>{
+  if(fileInput.files.length){
+    loadExcel(fileInput.files[0]);
+  }
+});
 
 async function loadExcel(file){
   filterLoader.classList.add("show");
-  uploadContent.innerHTML='<div class="loader"></div>';
-  uploadStatus.innerText='Loading file...';
+  uploadContent.innerHTML = '<div class="loader"></div>';
+  uploadStatus.innerText = "Loading file...";
 
-  await new Promise(r=>setTimeout(r,50));
+  await new Promise(r => setTimeout(r, 50));
 
-  const reader=new FileReader();
+  const reader = new FileReader();
 
-  reader.onload=async e=>{
-    uploadStatus.innerText='Processing data...';
-    await new Promise(r=>setTimeout(r,100));
+  reader.onload = async e => {
+    uploadStatus.innerText = "Processing data...";
+    await new Promise(r => setTimeout(r, 100));
 
-    const wb=XLSX.read(e.target.result,{type:"array"});
-    rawData=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    filteredData=rawData;
+    const wb = XLSX.read(e.target.result, { type: "array" });
+    rawData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    filteredData = rawData;
 
-    await new Promise(r=>setTimeout(r,60));
+    await new Promise(r => setTimeout(r, 60));
 
     loadFilters();
     renderAll();
 
-    uploadContent.innerHTML='<div class="upload-icon">✅</div>';
-    uploadStatus.innerHTML=`<span class="success">Loaded ${file.name}</span>`;
+    uploadContent.innerHTML = '<div class="upload-icon">✅</div>';
+    uploadStatus.innerHTML = `<span class="success">Loaded ${file.name}</span>`;
     filterLoader.classList.remove("show");
   };
 
   reader.readAsArrayBuffer(file);
 }
 
-/* ----------------------- */
-/*        FILTERS          */
-/* ----------------------- */
+/* ----------------------------- */
+/*         FILTER SYSTEM         */
+/* ----------------------------- */
 
 function loadFilters(){
-  const ys=new Set(),ms=new Set();
-  rawData.forEach(r=>{
-    const d=parseDate(getValue(r,"date"));
-    ys.add(d.getFullYear());
-    ms.add(d.getMonth());
+  const years = new Set(), months = new Set();
+
+  rawData.forEach(r => {
+    const d = parseDate(getValue(r,"date"));
+    years.add(d.getFullYear());
+    months.add(d.getMonth());
   });
 
-  yearFilter.innerHTML='<option value="">All Years</option>';
-  [...ys].sort().forEach(y=>yearFilter.innerHTML+=`<option>${y}</option>`);
+  yearFilter.innerHTML = '<option value="">All Years</option>';
+  [...years].sort().forEach(y => {
+    yearFilter.innerHTML += `<option>${y}</option>`;
+  });
 
-  monthFilter.innerHTML='<option value="">All Months</option>';
-  [...ms].sort().forEach(m=>{
-    monthFilter.innerHTML+=`<option value="${m}">${new Date(0,m).toLocaleString("en",{month:"long"})}</option>`;
+  monthFilter.innerHTML = '<option value="">All Months</option>';
+  [...months].sort().forEach(m => {
+    monthFilter.innerHTML += `
+      <option value="${m}">
+        ${new Date(0,m).toLocaleString("en",{month:"long"})}
+      </option>`;
   });
 }
 
 function applyFilter(){
   filterLoader.classList.add("show");
 
-  setTimeout(()=>{
-    filteredData=rawData.filter(r=>{
-      const d=parseDate(getValue(r,"date"));
-      return (!yearFilter.value || d.getFullYear()==yearFilter.value)
-          && (!monthFilter.value || d.getMonth()==monthFilter.value);
+  setTimeout(() => {
+    filteredData = rawData.filter(r => {
+      const d = parseDate(getValue(r,"date"));
+      return (!yearFilter.value || d.getFullYear() == yearFilter.value)
+          && (!monthFilter.value || d.getMonth() == monthFilter.value);
     });
 
     renderAll();
     filterLoader.classList.remove("show");
-  },200);
+  }, 200);
 }
 
-/* ----------------------- */
-/*     RENDERER LOGIC      */
-/* ----------------------- */
+/* ----------------------------- */
+/*      SUMMARY CALCULATIONS     */
+/* ----------------------------- */
+
+function buildSummaryTitle(){
+  let title = "Overall";
+
+  if(yearFilter.value && monthFilter.value === ""){
+    title = `${yearFilter.value} (All Months)`;
+  }
+
+  if(!yearFilter.value && monthFilter.value !== ""){
+    const m = new Date(0, monthFilter.value).toLocaleString("en",{month:"long"});
+    title = `${m} (All Years)`;
+  }
+
+  if(yearFilter.value && monthFilter.value !== ""){
+    const m = new Date(0, monthFilter.value).toLocaleString("en",{month:"long"});
+    title = `${m} ${yearFilter.value}`;
+  }
+
+  return title;
+}
+
+function totals(){
+  let c = 0, d = 0;
+
+  filteredData.forEach(r=>{
+    c += +getValue(r,"credit") || 0;
+    d += +getValue(r,"debit") || 0;
+  });
+
+  const net = c - d;
+
+  credit.innerText = "₹" + formatNumber(c);
+  debit.innerText  = "₹" + formatNumber(d);
+  saving.childNodes[0].nodeValue = "₹" + formatNumber(net) + " ";
+
+  // Add Month + Year title in summary
+  const title = buildSummaryTitle();
+  creditTitle.innerText = `Total Credit – ${title}`;
+  debitTitle.innerText  = `Total Debit – ${title}`;
+  savingTitle.innerText = `Net Saving – ${title}`;
+
+  if(net > 0){
+    savingArrow.innerHTML = `
+      <svg width="26" height="26" stroke="#16a34a" stroke-width="2.8" fill="none" viewBox="0 0 24 24">
+        <path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>
+      </svg>`;
+  } 
+  else if(net < 0){
+    savingArrow.innerHTML = `
+      <svg width="26" height="26" stroke="#dc2626" stroke-width="2.8" fill="none" viewBox="0 0 24 24">
+        <path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/>
+      </svg>`;
+  }
+}
+<!-- PART 3/3: Charts, Merchant Table, AI Insight, closing -->
+
+/* ----------------------------- */
+/*     RENDERER & CHARTS        */
+/* ----------------------------- */
 
 function renderAll(){
   totals();
-  setTimeout(monthWise,30);
-  setTimeout(weeklyWise,60);
-  setTimeout(merchantWise,100);
-  setTimeout(generateAIInsight,140);
+  // Stagger heavy tasks so UI stays responsive
+  setTimeout(monthWise, 30);
+  setTimeout(weeklyWise, 60);
+  setTimeout(merchantWise, 100);
+  setTimeout(generateAIInsight, 140);
 }
 
-/* ----------------------- */
-/*         TOTALS          */
-/* ----------------------- */
-
-function totals(){
-  let c=0,d=0;
-  filteredData.forEach(r=>{
-    c+=+getValue(r,"credit")||0;
-    d+=+getValue(r,"debit")||0;
-  });
-
-  const net=c-d;
-  credit.innerText=`₹${formatNumber(c)}`;
-  debit.innerText=`₹${formatNumber(d)}`;
-  saving.childNodes[0].nodeValue=`₹${formatNumber(net)} `;
-
-  if(net>0){
-    savingArrow.innerHTML=`<svg width="26" height="26" stroke="#16a34a" stroke-width="2.8" fill="none" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`;
-  } else if(net<0){
-    savingArrow.innerHTML=`<svg width="26" height="26" stroke="#dc2626" stroke-width="2.8" fill="none" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>`;
-  }
-}
-
-/* ----------------------- */
-/*   MONTH WISE + CHART    */
-/* ----------------------- */
+/* ----------------------------- */
+/*        MONTH WISE TABLE       */
+/*        + Month Chart          */
+/* ----------------------------- */
 
 function monthWise(){
-  const map={};
+  const map = {};
   filteredData.forEach(r=>{
-    const d=parseDate(getValue(r,"date"));
-    const key=d.getMonth()+"-"+d.getFullYear();
-    if(!map[key]) map[key]={c:0,d:0,date:d};
-    map[key].c+=+getValue(r,"credit")||0;
-    map[key].d+=+getValue(r,"debit")||0;
+    const d = parseDate(getValue(r,"date"));
+    const key = d.getMonth() + "-" + d.getFullYear();
+    if(!map[key]) map[key] = { c:0, d:0, date: d };
+    map[key].c += +getValue(r,"credit") || 0;
+    map[key].d += +getValue(r,"debit") || 0;
   });
 
-  monthTable.innerHTML='<tr><th>Month</th><th>Credit</th><th>Debit</th><th>Saving</th></tr>';
+  monthTable.innerHTML = '<tr><th>Month</th><th>Credit</th><th>Debit</th><th>Saving</th></tr>';
 
-  const labels=[],vals=[];
-  Object.values(map).sort((a,b)=>a.date-b.date).forEach(v=>{
-    const s=v.c-v.d;
-    const lab=v.date.toLocaleString("en",{month:"short",year:"numeric"});
+  const labels = [], vals = [];
+  Object.values(map)
+    .sort((a,b) => a.date - b.date)
+    .forEach(v => {
+      const s = v.c - v.d;
+      const lab = v.date.toLocaleString("en",{month:"short", year:"numeric"});
 
-    monthTable.innerHTML+=`
-      <tr><td>${lab}</td>
-      <td>${formatNumber(v.c)}</td>
-      <td>${formatNumber(v.d)}</td>
-      <td>${formatNumber(s)}</td></tr>`;
+      monthTable.innerHTML += `
+        <tr>
+          <td>${lab}</td>
+          <td>${formatNumber(v.c)}</td>
+          <td>${formatNumber(v.d)}</td>
+          <td>${formatNumber(s)}</td>
+        </tr>`;
 
-    labels.push(lab); vals.push(s);
-  });
+      labels.push(lab);
+      vals.push(s);
+    });
 
+  // Chart
   if(monthChart) monthChart.destroy();
-  monthChart=new Chart(document.getElementById("monthChart"), { 
-    type:"line",
-    data:{labels,
-    datasets:[{label:"Net Saving",data:vals,borderWidth:3,tension:.35}]}
+  monthChart = new Chart(document.getElementById("monthChart"), {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Net Saving",
+        data: vals,
+        borderWidth: 3,
+        tension: 0.35
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
   });
 }
 
-/* ----------------------- */
-/*       WEEKLY GRAPH      */
-/* ----------------------- */
+/* ----------------------------- */
+/*         WEEKLY CHART          */
+/* ----------------------------- */
 
 function weeklyWise(){
-  if(monthFilter.value===""){weeklySection.style.display="none"; return;}
-  weeklySection.style.display="block";
+  // Only show weekly when user selected a specific month
+  if(monthFilter.value === ""){
+    weeklySection.style.display = "none";
+    return;
+  }
+  weeklySection.style.display = "block";
 
-  const weeks=[0,0,0,0,0];
+  const weeks = [0,0,0,0,0];
   filteredData.forEach(r=>{
-    const d=parseDate(getValue(r,"date"));
-    const deb=+getValue(r,"debit")||0;
-    if(deb>0){
-      const w=Math.min(Math.floor((d.getDate()-1)/7),4);
-      weeks[w]+=deb;
+    const d = parseDate(getValue(r,"date"));
+    const deb = +getValue(r,"debit") || 0;
+    if(deb > 0){
+      const w = Math.min(Math.floor((d.getDate()-1)/7), 4);
+      weeks[w] += deb;
     }
   });
 
   if(weeklyChart) weeklyChart.destroy();
-  weeklyChart=new Chart(document.getElementById("weeklyChart"),{
-    type:"line",
-    data:{
-      labels:["Week 1","Week 2","Week 3","Week 4","Week 5"],
-      datasets:[{label:"Weekly Spending",data:weeks,borderWidth:3,tension:.35}]
+  weeklyChart = new Chart(document.getElementById("weeklyChart"), {
+    type: "line",
+    data: {
+      labels: ["Week 1","Week 2","Week 3","Week 4","Week 5"],
+      datasets: [{
+        label: "Weekly Spending",
+        data: weeks,
+        borderWidth: 3,
+        tension: 0.35
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
     }
   });
 }
 
-/* ----------------------- */
-/*     MERCHANT TABLE      */
-/* ----------------------- */
+/* ----------------------------- */
+/*       MERCHANT TABLE          */
+/* ----------------------------- */
 
 function merchantWise(){
-  const rows=[];
+  const rows = [];
 
   filteredData.forEach(r=>{
-    const d=parseDate(getValue(r,"date"));
+    const d = parseDate(getValue(r,"date"));
     rows.push({
-      date:d,
-      dateLabel:d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}),
-      merchant:getValue(r,"merchant name"),
-      credit:+getValue(r,"credit")||0,
-      debit:+getValue(r,"debit")||0
+      date: d,
+      dateLabel: d.toLocaleDateString("en-GB",{day:"2-digit", month:"short", year:"numeric"}),
+      merchant: getValue(r,"merchant name"),
+      credit: +getValue(r,"credit") || 0,
+      debit: +getValue(r,"debit") || 0
     });
   });
 
-  rows.sort((a,b)=>a.date-b.date);
+  rows.sort((a,b) => a.date - b.date);
 
-  let html=`
+  let html = `
     <tr>
       <th>Date</th>
       <th>Merchant</th>
@@ -536,96 +650,103 @@ function merchantWise(){
       <th>Debit</th>
     </tr>`;
 
-  rows.forEach(r=>{
-    html+=`
+  rows.forEach(r => {
+    // put merchant text also into data-original attribute for fast highlight later
+    const merchantSafe = (r.merchant && String(r.merchant)) || "-";
+    html += `
       <tr class="table-row-highlight">
         <td>${r.dateLabel}</td>
-        <td data-original="${r.merchant || "-"}">${r.merchant || "-"}</td>
-        <td class="${r.credit>0?"credit-cell":""}">
-            ${r.credit>0?"₹"+formatNumber(r.credit):"-"}
-        </td>
-        <td class="${r.debit>0?"debit-cell":""}">
-            ${r.debit>0?"₹"+formatNumber(r.debit):"-"}
-        </td>
+        <td data-original="${escapeHtml(merchantSafe)}">${escapeHtml(merchantSafe)}</td>
+        <td class="${r.credit>0 ? "credit-cell" : ""}">${r.credit>0 ? "₹" + formatNumber(r.credit) : "-"}</td>
+        <td class="${r.debit>0 ? "debit-cell" : ""}">${r.debit>0 ? "₹" + formatNumber(r.debit) : "-"}</td>
       </tr>`;
   });
 
-  merchantTable.innerHTML=html;
+  merchantTable.innerHTML = html;
 }
 
-/* ----------------------- */
-/*       AI INSIGHTS       */
-/* ----------------------- */
+/* ----------------------------- */
+/*        AI INSIGHT BOX         */
+/* ----------------------------- */
 
 function generateAIInsight(){
-  const box=document.getElementById("aiInsight");
-  box.style.display="none";
+  const box = document.getElementById("aiInsight");
+  box.style.display = "none";
 
-  let totalCredit=0,totalDebit=0;
-  const merchantTotals={};
-  let totalSpend=0;
+  let totalCredit = 0, totalDebit = 0;
+  const merchantTotals = {};
+  let totalSpend = 0;
 
   filteredData.forEach(r=>{
-    const m=getValue(r,"merchant name");
-    const c=+getValue(r,"credit")||0;
-    const d=+getValue(r,"debit")||0;
-
-    totalCredit+=c;
-    totalDebit+=d;
-
+    const m = getValue(r,"merchant name");
+    const c = +getValue(r,"credit") || 0;
+    const d = +getValue(r,"debit") || 0;
+    totalCredit += c; totalDebit += d;
     if(m && d>0){
-      merchantTotals[m]=(merchantTotals[m]||0)+d;
-      totalSpend+=d;
+      merchantTotals[m] = (merchantTotals[m] || 0) + d;
+      totalSpend += d;
     }
   });
 
-  if(totalSpend===0) return;
+  if(totalSpend === 0) return;
 
-  let topMerchant="",topAmount=0;
+  let topMerchant = "", topAmount = 0;
   for(const m in merchantTotals){
-    if(merchantTotals[m]>topAmount){
-      topMerchant=m; topAmount=merchantTotals[m];
+    if(merchantTotals[m] > topAmount){
+      topMerchant = m; topAmount = merchantTotals[m];
     }
   }
 
-  const percent=((topAmount/totalSpend)*100).toFixed(1);
-  const netSaving=totalCredit-totalDebit;
+  const percent = ((topAmount / totalSpend) * 100).toFixed(1);
+  const netSaving = totalCredit - totalDebit;
 
-  let period="overall";
-  if(!yearFilter.value && monthFilter.value!==""){
-    const m=new Date(0,monthFilter.value).toLocaleString("en",{month:"long"});
-    period=`${m} (all years)`;
-  }
-  if(yearFilter.value && monthFilter.value===""){
-    period=`the year ${yearFilter.value}`;
-  }
-  if(yearFilter.value && monthFilter.value!==""){
-    const m=new Date(0,monthFilter.value).toLocaleString("en",{month:"long"});
-    period=`${m} ${yearFilter.value}`;
+  // period text mirrors buildSummaryTitle logic
+  let period = "Overall";
+  if(yearFilter.value && monthFilter.value === ""){
+    period = `${yearFilter.value} (All Months)`;
+  } else if(!yearFilter.value && monthFilter.value !== ""){
+    period = `${new Date(0,monthFilter.value).toLocaleString("en",{month:"long"})} (All Years)`;
+  } else if(yearFilter.value && monthFilter.value !== ""){
+    period = `${new Date(0,monthFilter.value).toLocaleString("en",{month:"long"})} ${yearFilter.value}`;
   }
 
-  box.innerHTML=`
-    🧠 <b>AI Insight</b><br><br>
-    📌 In <b>${period}</b>, your highest spending was on 
-    <b>${topMerchant.toUpperCase()}</b> — 
-    <b>₹${formatNumber(topAmount)}</b>
-    <span style="color:#6b7280">(${percent}% of total spending)</span><br><br>
-    💰 <b>Your net saving:</b> 
-    <span style="color:${netSaving>=0?"#16a34a":"#dc2626"};font-weight:600">
+  box.innerHTML = `
+    🧠 <b>AI Spending Insight</b><br><br>
+    📌 In <b>${period}</b>, highest spending was on <b>${escapeHtml(String(topMerchant).toUpperCase())}</b> —
+    <b>₹${formatNumber(topAmount)}</b> <span style="color:#6b7280">(${percent}% of spending)</span><br><br>
+    💰 <b>Net saving:</b> <span style="color:${netSaving>=0 ? '#16a34a' : '#dc2626'}; font-weight:600">
       ₹${formatNumber(netSaving)}
     </span><br><br>
-    ${
-      percent>40
-      ? "⚠️ This merchant dominates expenses."
-      : percent>25
-      ? "🔍 One of your major expense zones."
-      : "✅ Spending is well distributed."
-    }
+    ${ percent > 40 ? "⚠️ This merchant dominates your expenses." :
+       percent > 25 ? "🔍 This is a major expense area." :
+       "✅ Spending is reasonably distributed." }
   `;
 
-  box.style.display="block";
+  box.style.display = "block";
 }
-</script>
 
+/* ----------------------------- */
+/*      SMALL UTILITIES          */
+/* ----------------------------- */
+
+function escapeHtml(text){
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/* ----------------------------- */
+/*     INITIAL EMPTY STATE       */
+/* ----------------------------- */
+
+(function initEmpty(){
+  // ensure charts have some height so they render nicely
+  document.getElementById("monthChart").style.height = "260px";
+  document.getElementById("weeklyChart").style.height = "260px";
+})();
+</script>
 </body>
 </html>
