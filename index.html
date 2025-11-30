@@ -9,10 +9,20 @@
 
 <style>
 :root{
-  --bg:#f5f7fb; --card:#fff;
-  --primary:#4f46e5; --success:#16a34a; --danger:#dc2626;
-  --text:#1f2937; --muted:#6b7280;
+  --bg:#f5f7fb;
+  --card:#fff;
+  --primary:#4f46e5;
+  --success:#16a34a;
+  --danger:#dc2626;
+  --text:#1f2937;
+  --muted:#6b7280;
+
+  --glass-bg: rgba(255, 255, 255, 0.35);
+  --glass-border: rgba(255, 255, 255, 0.55);
 }
+
+/* ---------------- GLOBAL ---------------- */
+
 *{box-sizing:border-box}
 
 body{
@@ -22,6 +32,8 @@ body{
   background:var(--bg);
   color:var(--text);
 }
+
+/* ---------------- HEADER ---------------- */
 
 header{
   background:linear-gradient(135deg,#4f46e5,#6366f1);
@@ -34,12 +46,14 @@ header{
   align-items:center;
 
   position:fixed;
-  top:0; left:0;
+  top:0; 
+  left:0;
   width:100%;
   z-index:999;
   box-shadow:0 4px 12px rgba(0,0,0,0.25);
 }
 
+/* Search bar */
 .search-input{
   padding:12px 48px 12px 18px;
   border-radius:50px;
@@ -65,83 +79,97 @@ header{
   color:#6b6b6b;
 }
 
-mark {
-  background: #fff3a3;
-  padding: 0 3px;
-  border-radius: 4px;
+/* ---------------- GLASS FILTER PANEL ---------------- */
+
+.controls {
+  display:flex;
+  gap:20px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-bottom:35px;
+
+  padding:18px 28px;
+  background: var(--glass-bg);
+  border-radius:26px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1.6px solid var(--glass-border);
+
+  box-shadow: 0 12px 32px rgba(0,0,0,0.12);
 }
+
+/* Improved dropdowns */
+select{
+  appearance:none;
+  padding:14px 52px 14px 20px;
+  min-width:180px;
+
+  background:rgba(255,255,255,0.65);
+  border:2px solid #e2e8f0;
+  border-radius:18px;
+
+  font-size:15px;
+  font-weight:600;
+  color:#374151;
+
+  background-image:url("data:image/svg+xml,%3Csvg width='16' height='16' stroke='%236366f1' stroke-width='2' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 18px center;
+  background-size:18px;
+
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
+  transition:0.22s ease;
+  cursor:pointer;
+}
+
+select:hover{
+  border-color:#6366f1;
+  box-shadow:0 10px 26px rgba(79,70,229,0.25);
+  transform:translateY(-2px);
+}
+
+select:focus{
+  outline:none;
+  border-color:#4f46e5;
+  box-shadow:0 0 0 3px rgba(79,70,229,0.25);
+}
+
+/* Apply Filter Button (Glass + Gradient) */
+.controls button{
+  padding:14px 28px;
+  font-size:15px;
+  font-weight:600;
+  color:white;
+
+  background:linear-gradient(135deg,#4f46e5,#6366f1);
+  border:none;
+  border-radius:18px;
+
+  box-shadow:0 12px 28px rgba(99,102,241,0.35);
+  cursor:pointer;
+  transition:0.25s ease;
+}
+
+.controls button:hover{
+  transform:translateY(-3px) scale(1.03);
+  box-shadow:0 18px 38px rgba(79,70,229,0.45);
+}
+
+.controls button:active{
+  transform:scale(0.96);
+}
+
+/* ---------------- REST OF UI BELOW (unchanged) ---------------- */
 
 .container{max-width:1200px;margin:20px auto;padding:20px}
 
-.controls{
-  display:flex;
-  gap:14px;
-  justify-content:center;
-  flex-wrap:wrap;
-  margin-bottom:30px;
-}
-
-select{
-  appearance:none;
-  padding:12px 44px 12px 16px;
-  border-radius:14px;
-  border:1.8px solid #e5e7eb;
-  background:#fff
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")
-    no-repeat right 14px center;
-  background-size:18px;
-  font-size:14px;
-  font-weight:500;
-  min-width:150px;
-  cursor:pointer;
-  box-shadow:0 8px 22px rgba(0,0,0,.06);
-}
-
-button{
-  padding:12px 22px;
-  border-radius:14px;
-  border:none;
-  background:var(--primary);
-  color:#fff;
-  font-weight:500;
-  cursor:pointer;
-  box-shadow:0 10px 25px rgba(79,70,229,.35);
-}
-
-.upload-box{
-  border:2px dashed #c7c9ff;
-  padding:22px 30px;
-  border-radius:18px;
-  background:#eef2ff;
-  cursor:pointer;
-  min-width:280px;
-  text-align:center;
-}
-
-.upload-content{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:10px;
-}
-.upload-icon{font-size:40px}
-.loader{
-  width:36px;height:36px;
-  border:4px solid #c7d2fe;
-  border-top-color:#4f46e5;
-  border-radius:50%;
-  animation:spin .8s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-.upload-status{font-size:14px;font-weight:500}
-.success{color:var(--success)}
-
+/* Summary cards */
 .summary{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
   gap:22px;margin-bottom:30px;
 }
+
 .card{
   background:var(--card);
   padding:24px;
@@ -154,6 +182,7 @@ button{
 .debit h2{color:var(--danger)}
 .saving h2{color:var(--primary)}
 
+/* Section boxes */
 .section{
   background:var(--card);
   padding:24px;
@@ -162,6 +191,7 @@ button{
   margin-bottom:30px;
 }
 
+/* Table */
 table{width:100%;border-collapse:collapse;margin-top:16px}
 th{background:#eef2ff;padding:12px;text-align:left}
 td{padding:12px;border-bottom:1px solid #eee}
@@ -172,6 +202,13 @@ td{padding:12px;border-bottom:1px solid #eee}
 
 .credit-cell { color:#16a34a;font-weight:600; }
 .debit-cell { color:#dc2626;font-weight:600; }
+
+/* Chart size fixes */
+#monthChart, #weeklyChart {
+  width:100%;
+  max-height:400px !important;
+  height:400px !important;
+}
 
 footer{text-align:center;color:var(--muted);padding:15px}
 
@@ -186,22 +223,8 @@ footer{text-align:center;color:var(--muted);padding:15px}
   z-index:2000;
 }
 #filterLoader.show{display:flex;}
-/* FIX: Keep Month-wise chart height controlled */
-#monthChart {
-  width: 100%;
-  max-height: 350px !important;
-  height: 350px !important;
-}
-/* FIX: Keep Weekly Spending chart height controlled */
-#weeklyChart {
-  width: 100%;
-  max-height: 350px !important;
-  height: 350px !important;
-}
-
 </style>
 </head>
-
 <body>
 
 <header>
@@ -221,8 +244,17 @@ footer{text-align:center;color:var(--muted);padding:15px}
 
 <div class="container">
 
+<!-- ---------------- GLASS FILTER PANEL ---------------- -->
 <div class="controls">
-  <div class="upload-box" id="uploadBox">
+  <div class="upload-box" id="uploadBox" style="
+    border:2px dashed #c7c9ff;
+    padding:22px 30px;
+    border-radius:18px;
+    background:#eef2ff;
+    cursor:pointer;
+    min-width:280px;
+    text-align:center;">
+    
     <input type="file" id="fileInput" accept=".xls,.xlsx" hidden>
     <div class="upload-content" id="uploadContent">
       <div class="upload-icon">📊</div>
@@ -236,6 +268,7 @@ footer{text-align:center;color:var(--muted);padding:15px}
   <button onclick="applyFilter()">Apply Filter</button>
 </div>
 
+<!-- ---------------- SUMMARY CARDS ---------------- -->
 <div class="summary">
   <div class="card credit">
     <h4 id="creditTitle">Total Credit</h4>
@@ -253,17 +286,20 @@ footer{text-align:center;color:var(--muted);padding:15px}
   </div>
 </div>
 
+<!-- ---------------- MONTH TABLE + CHART ---------------- -->
 <div class="section">
   <h3>📈 Month-wise Savings Trend</h3>
   <table id="monthTable"></table>
   <canvas id="monthChart"></canvas>
 </div>
 
+<!-- ---------------- WEEKLY SPENDING ---------------- -->
 <div class="section" id="weeklySection" style="display:none">
   <h3 id="weeklyTitle">🗓 Weekly Spending</h3>
   <canvas id="weeklyChart"></canvas>
 </div>
 
+<!-- ---------------- MERCHANT TABLE ---------------- -->
 <div class="section">
   <h3>🏪 Merchant-wise Spending (Full Transaction Log)</h3>
 
@@ -280,23 +316,18 @@ footer{text-align:center;color:var(--muted);padding:15px}
 <footer>Built from your Excel data • Fully offline & secure</footer>
 
 <div id="filterLoader"><div class="loader"></div></div>
+
+<!-- ---------------- SCRIPT (UNCHANGED LOGIC) ---------------- -->
 <script>
 
 let rawData = [], filteredData = [], monthChart, weeklyChart;
 
-/* ----------------------------- */
-/*         HELPERS               */
-/* ----------------------------- */
-
-function formatNumber(n){
-  return n.toLocaleString("en-IN",{ minimumFractionDigits: 2 });
-}
-
+/* --- Helpers --- */
+function formatNumber(n){ return n.toLocaleString("en-IN",{ minimumFractionDigits: 2 }); }
 function getValue(row, key){
   const match = Object.keys(row).find(k => k.trim().toLowerCase() === key.toLowerCase());
   return match ? row[match] : 0;
 }
-
 function parseDate(v){
   if(typeof v === "number"){
     return new Date((v - 25569) * 86400 * 1000);
@@ -305,17 +336,12 @@ function parseDate(v){
   return new Date(p[2], p[1]-1, p[0]);
 }
 
-/* ----------------------------- */
-/*     SEARCH (FAST + HIGHLIGHT) */
-/* ----------------------------- */
-
+/* --- Search --- */
 let searchTimeout = null;
-
 function debouncedMerchantSearch(){
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(merchantSearch, 150);
 }
-
 function merchantSearch(){
   const q = document.getElementById("searchBar").value.toLowerCase();
   const rows = merchantTable.getElementsByTagName("tr");
@@ -349,32 +375,25 @@ function merchantSearch(){
   }
 }
 
-/* ----------------------------- */
-/*       FILE UPLOAD (SMOOTH)    */
-/* ----------------------------- */
-
+/* --- File Upload --- */
 uploadBox.onclick = () => fileInput.click();
-
 ["dragenter","dragover"].forEach(ev => {
   uploadBox.addEventListener(ev, e=>{
     e.preventDefault();
     uploadBox.classList.add("dragover");
   });
 });
-
 ["dragleave","drop"].forEach(ev => {
   uploadBox.addEventListener(ev, e=>{
     e.preventDefault();
     uploadBox.classList.remove("dragover");
   });
 });
-
 uploadBox.addEventListener("drop", e=>{
   if(e.dataTransfer.files.length){
     loadExcel(e.dataTransfer.files[0]);
   }
 });
-
 fileInput.addEventListener("change", ()=>{
   if(fileInput.files.length){
     loadExcel(fileInput.files[0]);
@@ -389,7 +408,6 @@ async function loadExcel(file){
   await new Promise(r => setTimeout(r, 50));
 
   const reader = new FileReader();
-
   reader.onload = async e => {
     uploadStatus.innerText = "Processing data...";
     await new Promise(r => setTimeout(r, 100));
@@ -411,10 +429,7 @@ async function loadExcel(file){
   reader.readAsArrayBuffer(file);
 }
 
-/* ----------------------------- */
-/*         FILTER SYSTEM         */
-/* ----------------------------- */
-
+/* --- Filter System --- */
 function loadFilters(){
   const years = new Set(), months = new Set();
 
@@ -453,10 +468,7 @@ function applyFilter(){
   }, 200);
 }
 
-/* ----------------------------- */
-/*      SUMMARY CALCULATIONS     */
-/* ----------------------------- */
-
+/* --- Summary --- */
 function buildSummaryTitle(){
   let title = "Overall";
 
@@ -491,7 +503,6 @@ function totals(){
   debit.innerText  = "₹" + formatNumber(d);
   saving.childNodes[0].nodeValue = "₹" + formatNumber(net) + " ";
 
-  // Add Month + Year title in summary
   const title = buildSummaryTitle();
   creditTitle.innerText = `Total Credit – ${title}`;
   debitTitle.innerText  = `Total Debit – ${title}`;
@@ -510,26 +521,17 @@ function totals(){
       </svg>`;
   }
 }
-<!-- PART 3/3: Charts, Merchant Table, AI Insight, closing -->
 
-/* ----------------------------- */
-/*     RENDERER & CHARTS        */
-/* ----------------------------- */
-
+/* --- Renderer --- */
 function renderAll(){
   totals();
-  // Stagger heavy tasks so UI stays responsive
   setTimeout(monthWise, 30);
   setTimeout(weeklyWise, 60);
   setTimeout(merchantWise, 100);
   setTimeout(generateAIInsight, 140);
 }
 
-/* ----------------------------- */
-/*        MONTH WISE TABLE       */
-/*        + Month Chart          */
-/* ----------------------------- */
-
+/* --- Month-wise --- */
 function monthWise(){
   const map = {};
   filteredData.forEach(r=>{
@@ -561,32 +563,24 @@ function monthWise(){
       vals.push(s);
     });
 
-  // Chart
   if(monthChart) monthChart.destroy();
   monthChart = new Chart(document.getElementById("monthChart"), {
-    type: "line",
-    data: {
-      labels: labels,
-      datasets: [{
-        label: "Net Saving",
-        data: vals,
-        borderWidth: 3,
-        tension: 0.35
+    type:"line",
+    data:{
+      labels:labels,
+      datasets:[{
+        label:"Net Saving",
+        data:vals,
+        borderWidth:3,
+        tension:0.35
       }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false
-    }
+    options:{ responsive:true, maintainAspectRatio:false }
   });
 }
 
-/* ----------------------------- */
-/*         WEEKLY CHART          */
-/* ----------------------------- */
-
+/* --- Weekly chart --- */
 function weeklyWise(){
-  // Only show weekly when user selected a specific month
   if(monthFilter.value === ""){
     weeklySection.style.display = "none";
     return;
@@ -605,27 +599,21 @@ function weeklyWise(){
 
   if(weeklyChart) weeklyChart.destroy();
   weeklyChart = new Chart(document.getElementById("weeklyChart"), {
-    type: "line",
-    data: {
-      labels: ["Week 1","Week 2","Week 3","Week 4","Week 5"],
-      datasets: [{
-        label: "Weekly Spending",
-        data: weeks,
-        borderWidth: 3,
-        tension: 0.35
+    type:"line",
+    data:{
+      labels:["Week 1","Week 2","Week 3","Week 4","Week 5"],
+      datasets:[{
+        label:"Weekly Spending",
+        data:weeks,
+        borderWidth:3,
+        tension:0.35
       }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false
-    }
+    options:{ responsive:true, maintainAspectRatio:false }
   });
 }
 
-/* ----------------------------- */
-/*       MERCHANT TABLE          */
-/* ----------------------------- */
-
+/* --- Merchant table --- */
 function merchantWise(){
   const rows = [];
 
@@ -650,8 +638,7 @@ function merchantWise(){
       <th>Debit</th>
     </tr>`;
 
-  rows.forEach(r => {
-    // put merchant text also into data-original attribute for fast highlight later
+  rows.forEach(r=>{
     const merchantSafe = (r.merchant && String(r.merchant)) || "-";
     html += `
       <tr class="table-row-highlight">
@@ -665,10 +652,7 @@ function merchantWise(){
   merchantTable.innerHTML = html;
 }
 
-/* ----------------------------- */
-/*        AI INSIGHT BOX         */
-/* ----------------------------- */
-
+/* --- AI Insight --- */
 function generateAIInsight(){
   const box = document.getElementById("aiInsight");
   box.style.display = "none";
@@ -700,21 +684,14 @@ function generateAIInsight(){
   const percent = ((topAmount / totalSpend) * 100).toFixed(1);
   const netSaving = totalCredit - totalDebit;
 
-  // period text mirrors buildSummaryTitle logic
-  let period = "Overall";
-  if(yearFilter.value && monthFilter.value === ""){
-    period = `${yearFilter.value} (All Months)`;
-  } else if(!yearFilter.value && monthFilter.value !== ""){
-    period = `${new Date(0,monthFilter.value).toLocaleString("en",{month:"long"})} (All Years)`;
-  } else if(yearFilter.value && monthFilter.value !== ""){
-    period = `${new Date(0,monthFilter.value).toLocaleString("en",{month:"long"})} ${yearFilter.value}`;
-  }
+  let period = buildSummaryTitle();
 
   box.innerHTML = `
     🧠 <b>AI Spending Insight</b><br><br>
     📌 In <b>${period}</b>, highest spending was on <b>${escapeHtml(String(topMerchant).toUpperCase())}</b> —
     <b>₹${formatNumber(topAmount)}</b> <span style="color:#6b7280">(${percent}% of spending)</span><br><br>
-    💰 <b>Net saving:</b> <span style="color:${netSaving>=0 ? '#16a34a' : '#dc2626'}; font-weight:600">
+    💰 <b>Net saving:</b> 
+    <span style="color:${netSaving>=0 ? '#16a34a' : '#dc2626'}; font-weight:600">
       ₹${formatNumber(netSaving)}
     </span><br><br>
     ${ percent > 40 ? "⚠️ This merchant dominates your expenses." :
@@ -725,10 +702,7 @@ function generateAIInsight(){
   box.style.display = "block";
 }
 
-/* ----------------------------- */
-/*      SMALL UTILITIES          */
-/* ----------------------------- */
-
+/* --- Escape HTML --- */
 function escapeHtml(text){
   return String(text)
     .replace(/&/g, "&amp;")
@@ -738,15 +712,12 @@ function escapeHtml(text){
     .replace(/>/g, "&gt;");
 }
 
-/* ----------------------------- */
-/*     INITIAL EMPTY STATE       */
-/* ----------------------------- */
-
+/* --- Initial Chart Heights --- */
 (function initEmpty(){
-  // ensure charts have some height so they render nicely
-  document.getElementById("monthChart").style.height = "260px";
-  document.getElementById("weeklyChart").style.height = "260px";
+  document.getElementById("monthChart").style.height = "400px";
+  document.getElementById("weeklyChart").style.height = "400px";
 })();
 </script>
+
 </body>
 </html>
