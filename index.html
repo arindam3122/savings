@@ -17,13 +17,12 @@
 
 body{
   margin:0;
-  padding-top:95px;           /* IMPORTANT: Space for fixed header */
+  padding-top:95px;
   font-family:"Segoe UI",system-ui;
   background:var(--bg);
   color:var(--text);
 }
 
-/* ---------------- FIXED HEADER ---------------- */
 header{
   background:linear-gradient(135deg,#4f46e5,#6366f1);
   color:#fff;
@@ -34,15 +33,13 @@ header{
   justify-content:space-between;
   align-items:center;
 
-  position:fixed;             /* FIXED */
-  top:0;
-  left:0;
+  position:fixed;
+  top:0; left:0;
   width:100%;
   z-index:999;
   box-shadow:0 4px 12px rgba(0,0,0,0.25);
 }
 
-/* ---------------- SEARCH BAR ---------------- */
 .search-input{
   padding:12px 48px 12px 18px;
   border-radius:50px;
@@ -54,34 +51,25 @@ header{
   transition:0.3s ease-in-out;
   box-shadow:0 3px 10px rgba(0,0,0,0.10);
 }
-
-.search-input:hover{
-  box-shadow:0 4px 14px rgba(0,0,0,0.15);
-}
-
 .search-input:focus{
   width:360px;
   border-color:#4f46e5;
   box-shadow:0 6px 20px rgba(79,70,229,0.35);
 }
-
 .search-icon{
   position:absolute;
   right:18px;
-  top:50%;
-  transform:translateY(-50%);
+  top:50%; transform:translateY(-50%);
   font-size:18px;
   pointer-events:none;
   color:#6b6b6b;
 }
 
-.highlight{
-  background:yellow;
-  font-weight:bold;
-  padding:2px 3px;
-  border-radius:4px;
+mark {
+  background: #fff3a3;
+  padding: 0 3px;
+  border-radius: 4px;
 }
-/* ------------------------------------------------ */
 
 .container{max-width:1200px;margin:20px auto;padding:20px}
 
@@ -108,11 +96,6 @@ select{
   cursor:pointer;
   box-shadow:0 8px 22px rgba(0,0,0,.06);
 }
-select:focus{
-  outline:none;
-  border-color:#4f46e5;
-  box-shadow:0 0 0 4px rgba(99,102,241,.25);
-}
 
 button{
   padding:12px 22px;
@@ -134,10 +117,7 @@ button{
   min-width:280px;
   text-align:center;
 }
-.upload-box.dragover{
-  background:#e0e7ff;
-  border-color:#4f46e5;
-}
+
 .upload-content{
   display:flex;
   flex-direction:column;
@@ -145,8 +125,6 @@ button{
   gap:10px;
 }
 .upload-icon{font-size:40px}
-.upload-text{font-weight:500;color:#3730a3}
-.upload-text span{font-size:13px;color:#6b7280}
 .loader{
   width:36px;height:36px;
   border:4px solid #c7d2fe;
@@ -155,15 +133,14 @@ button{
   animation:spin .8s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
+
 .upload-status{font-size:14px;font-weight:500}
 .success{color:var(--success)}
-.error{color:var(--danger)}
 
 .summary{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:22px;
-  margin-bottom:30px;
+  gap:22px;margin-bottom:30px;
 }
 .card{
   background:var(--card);
@@ -189,25 +166,26 @@ table{width:100%;border-collapse:collapse;margin-top:16px}
 th{background:#eef2ff;padding:12px;text-align:left}
 td{padding:12px;border-bottom:1px solid #eee}
 
+.table-row-highlight:hover{
+  background:#f3f4f6; transition:0.2s;
+}
+
+.credit-cell { color:#16a34a;font-weight:600; }
+.debit-cell { color:#dc2626;font-weight:600; }
+
 footer{text-align:center;color:var(--muted);padding:15px}
-.credit-cell {
-  color: #16a34a; /* green */
-  font-weight: 600;
-}
 
-.debit-cell {
-  color: #dc2626; /* red */
-  font-weight: 600;
+#filterLoader{
+  position:fixed;
+  top:0;left:0;width:100%;height:100%;
+  background:rgba(255,255,255,0.75);
+  backdrop-filter:blur(4px);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:2000;
 }
-
-.table-row-highlight:hover {
-  background: #f3f4f6;
-  transition: 0.2s;
-}
-#filterLoader.show {
-  display: flex !important;
-}
-
+#filterLoader.show{display:flex;}
 </style>
 </head>
 
@@ -216,14 +194,14 @@ footer{text-align:center;color:var(--muted);padding:15px}
 <header>
   <div>📊 Expense & Savings Dashboard</div>
 
-  <!-- FIXED HEADER + SEARCH BAR -->
+  <!-- Debounced Search -->
   <div style="position:relative;">
     <input 
       type="text" 
       id="searchBar"
       class="search-input"
       placeholder="Search merchants..."
-      oninput="merchantSearch()"
+      oninput="debouncedMerchantSearch()"
     >
     <span class="search-icon">🔍</span>
   </div>
@@ -236,10 +214,7 @@ footer{text-align:center;color:var(--muted);padding:15px}
     <input type="file" id="fileInput" accept=".xls,.xlsx" hidden>
     <div class="upload-content" id="uploadContent">
       <div class="upload-icon">📊</div>
-      <div class="upload-text">
-        Drag & drop Excel file here
-        <span>or click to browse</span>
-      </div>
+      <div class="upload-text">Drag & drop Excel file<br><span>or click to browse</span></div>
     </div>
     <div class="upload-status" id="uploadStatus"></div>
   </div>
@@ -250,20 +225,9 @@ footer{text-align:center;color:var(--muted);padding:15px}
 </div>
 
 <div class="summary">
-  <div class="card credit">
-    <h4 id="creditTitle">Total Credit</h4>
-    <h2 id="credit">₹0</h2>
-  </div>
-
-  <div class="card debit">
-    <h4 id="debitTitle">Total Debit</h4>
-    <h2 id="debit">₹0</h2>
-  </div>
-
-  <div class="card saving">
-    <h4 id="savingTitle">Net Saving</h4>
-    <h2 id="saving">₹0 <span id="savingArrow"></span></h2>
-  </div>
+  <div class="card credit"><h4 id="creditTitle">Total Credit</h4><h2 id="credit">₹0</h2></div>
+  <div class="card debit"><h4 id="debitTitle">Total Debit</h4><h2 id="debit">₹0</h2></div>
+  <div class="card saving"><h4 id="savingTitle">Net Saving</h4><h2 id="saving">₹0 <span id="savingArrow"></span></h2></div>
 </div>
 
 <div class="section">
@@ -280,107 +244,136 @@ footer{text-align:center;color:var(--muted);padding:15px}
 <div class="section">
   <h3>🏪 Merchant-wise Spending (Full Transaction Log)</h3>
 
-  <!-- 🔥 AI Insight Box -->
-  <div id="aiInsight" 
-       style="background:#fef3c7; padding:16px; border-radius:14px; margin-bottom:18px; 
-              border-left:6px solid #f59e0b; font-size:15px; display:none;">
+  <div id="aiInsight"
+       style="background:#fef3c7;padding:16px;border-radius:14px;margin-bottom:18px;
+              border-left:6px solid #f59e0b;font-size:15px;display:none;">
   </div>
 
   <table id="merchantTable"></table>
 </div>
 
-
 </div>
 
-<footer>Built from your Excel data • Fully offline & private</footer>
+<footer>Built from your Excel data • Fully offline & secure</footer>
 
+<div id="filterLoader"><div class="loader"></div></div>
 <script>
 let rawData=[],filteredData=[],monthChart,weeklyChart;
 
-/* HELPERS */
-function formatNumber(n){
-  return n.toLocaleString("en-IN",{minimumFractionDigits:2});
-}
-function getValue(r,k){
-  const x=Object.keys(r).find(v=>v.trim().toLowerCase()===k.toLowerCase());
-  return x?r[x]:0;
-}
+/* Helper functions */
+function formatNumber(n){ return n.toLocaleString("en-IN",{minimumFractionDigits:2}); }
+function getValue(r,k){ const x=Object.keys(r).find(v=>v.trim().toLowerCase()===k.toLowerCase()); return x?r[x]:0; }
 function parseDate(v){
   if(typeof v==="number") return new Date((v-25569)*86400*1000);
-  const p=v.split("-");
-  return new Date(p[2],p[1]-1,p[0]);
+  const p=v.split("-"); return new Date(p[2],p[1]-1,p[0]);
 }
 
-/* HIGHLIGHT */
-function highlightText(text, query) {
-  if (!query) return text;
-  const regex = new RegExp(`(${query})`, "gi");
-  return text.replace(regex, `<span class="highlight">$1</span>`);
+/* ----------------------- */
+/*     SEARCH (FAST)       */
+/* ----------------------- */
+
+let searchTimeout = null;
+
+function debouncedMerchantSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    merchantSearch();
+  }, 150);
 }
 
-/* SEARCH ONLY MERCHANT TABLE */
 function merchantSearch() {
   const q = document.getElementById("searchBar").value.toLowerCase();
   const rows = merchantTable.getElementsByTagName("tr");
 
   for (let i = 1; i < rows.length; i++) {
-    const cells = rows[i].getElementsByTagName("td");
-    let match = false;
+    const merchantCell = rows[i].getElementsByTagName("td")[1];
 
-    for (let j = 0; j < cells.length; j++) {
-      const txt = cells[j].innerText.toLowerCase();
+    // Get original text or save it
+    const originalText =
+      merchantCell.getAttribute("data-original") || merchantCell.innerText;
 
-      if (txt.includes(q)) match = true;
-
-      cells[j].innerHTML = highlightText(cells[j].innerText, q);
+    if (!merchantCell.getAttribute("data-original")) {
+      merchantCell.setAttribute("data-original", originalText);
     }
 
-    rows[i].style.display = match ? "" : "none";
+    const merchantName = originalText.toLowerCase();
+
+    // Show/Hide logic
+    if (merchantName.includes(q)) {
+      rows[i].style.display = "";
+
+      // Highlight
+      if (q.trim() !== "") {
+        const regex = new RegExp(`(${q})`, "ig");
+        merchantCell.innerHTML = originalText.replace(regex, `<mark>$1</mark>`);
+      } else {
+        merchantCell.innerHTML = originalText;
+      }
+
+    } else {
+      rows[i].style.display = "none";
+      merchantCell.innerHTML = originalText;
+    }
   }
 }
 
-/* FILE UPLOAD LOGIC... (unchanged) */
-/* -------------------------------- */
+/* ----------------------- */
+/*   FILE UPLOAD (Smooth)  */
+/* ----------------------- */
+
 uploadBox.onclick=()=>fileInput.click();
-["dragenter","dragover"].forEach(e=>{
-  uploadBox.addEventListener(e,ev=>{
-    ev.preventDefault();
+
+["dragenter","dragover"].forEach(ev=>{
+  uploadBox.addEventListener(ev,e=>{
+    e.preventDefault();
     uploadBox.classList.add("dragover");
   });
 });
-["dragleave","drop"].forEach(e=>{
-  uploadBox.addEventListener(e,ev=>{
-    ev.preventDefault();
+["dragleave","drop"].forEach(ev=>{
+  uploadBox.addEventListener(ev,e=>{
+    e.preventDefault();
     uploadBox.classList.remove("dragover");
   });
 });
+
 uploadBox.addEventListener("drop",e=>{
   if(e.dataTransfer.files.length) loadExcel(e.dataTransfer.files[0]);
 });
-fileInput.addEventListener("change",()=>{
-  if(fileInput.files.length) loadExcel(fileInput.files[0]);
-});
+fileInput.addEventListener("change",()=>fileInput.files.length && loadExcel(fileInput.files[0]));
 
-function loadExcel(file){
+async function loadExcel(file){
+  filterLoader.classList.add("show");
   uploadContent.innerHTML='<div class="loader"></div>';
   uploadStatus.innerText='Loading file...';
 
-  const r=new FileReader();
-  r.onload=e=>{
+  await new Promise(r=>setTimeout(r,50));
+
+  const reader=new FileReader();
+
+  reader.onload=async e=>{
+    uploadStatus.innerText='Processing data...';
+    await new Promise(r=>setTimeout(r,100));
+
     const wb=XLSX.read(e.target.result,{type:"array"});
     rawData=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
     filteredData=rawData;
+
+    await new Promise(r=>setTimeout(r,60));
+
     loadFilters();
     renderAll();
+
     uploadContent.innerHTML='<div class="upload-icon">✅</div>';
-    uploadStatus.innerHTML='<span class="success">Loaded '+file.name+'</span>';
+    uploadStatus.innerHTML=`<span class="success">Loaded ${file.name}</span>`;
+    filterLoader.classList.remove("show");
   };
-  r.readAsArrayBuffer(file);
+
+  reader.readAsArrayBuffer(file);
 }
 
-/* FILTERS, TOTALS, CHARTS, MERCHANT TABLE — unchanged */
-/* (kept same as previous working version) */
-/* ------------------------------------- */
+/* ----------------------- */
+/*        FILTERS          */
+/* ----------------------- */
 
 function loadFilters(){
   const ys=new Set(),ms=new Set();
@@ -389,102 +382,110 @@ function loadFilters(){
     ys.add(d.getFullYear());
     ms.add(d.getMonth());
   });
+
   yearFilter.innerHTML='<option value="">All Years</option>';
   [...ys].sort().forEach(y=>yearFilter.innerHTML+=`<option>${y}</option>`);
+
   monthFilter.innerHTML='<option value="">All Months</option>';
-  [...ms].sort().forEach(m=>monthFilter.innerHTML+=`<option value="${m}">${new Date(0,m).toLocaleString("en",{month:"long"})}</option>`);
+  [...ms].sort().forEach(m=>{
+    monthFilter.innerHTML+=`<option value="${m}">${new Date(0,m).toLocaleString("en",{month:"long"})}</option>`;
+  });
 }
 
-function applyFilter() {
-  const loader = document.getElementById("filterLoader");
+function applyFilter(){
+  filterLoader.classList.add("show");
 
-  loader.classList.add("show");   // Show loader
-
-  // Add a slight delay for smooth effect
-  setTimeout(() => {
-    filteredData = rawData.filter(r => {
-      const d = parseDate(getValue(r, "date"));
-      return (!yearFilter.value || d.getFullYear() == yearFilter.value)
-          && (!monthFilter.value || d.getMonth() == monthFilter.value);
+  setTimeout(()=>{
+    filteredData=rawData.filter(r=>{
+      const d=parseDate(getValue(r,"date"));
+      return (!yearFilter.value || d.getFullYear()==yearFilter.value)
+          && (!monthFilter.value || d.getMonth()==monthFilter.value);
     });
 
     renderAll();
-    loader.classList.remove("show");   // Hide loader
-  }, 400); // <-- perfect timing for animation
+    filterLoader.classList.remove("show");
+  },200);
 }
 
+/* ----------------------- */
+/*     RENDERER LOGIC      */
+/* ----------------------- */
 
 function renderAll(){
   totals();
-  monthWise();
-  weeklyWise();
- merchantWise();
- generateAIInsight();    // <-- AI is activated here
-
+  setTimeout(monthWise,30);
+  setTimeout(weeklyWise,60);
+  setTimeout(merchantWise,100);
+  setTimeout(generateAIInsight,140);
 }
 
-/* TOTALS */  
+/* ----------------------- */
+/*         TOTALS          */
+/* ----------------------- */
+
 function totals(){
   let c=0,d=0;
   filteredData.forEach(r=>{
     c+=+getValue(r,"credit")||0;
     d+=+getValue(r,"debit")||0;
   });
+
   const net=c-d;
-
-  let title="All Years";
-  if(yearFilter.value && monthFilter.value!=="")
-    title=new Date(0,monthFilter.value).toLocaleString("en",{month:"long"})+" "+yearFilter.value;
-  else if(yearFilter.value)
-    title="All Months "+yearFilter.value;
-  else if(monthFilter.value!=="")
-    title=new Date(0,monthFilter.value).toLocaleString("en",{month:"long"})+" (All Years)";
-
-  creditTitle.innerText=`Total Credit for (${title})`;
-  debitTitle.innerText=`Total Debit for (${title})`;
-  savingTitle.innerText=`Net Saving for (${title})`;
-
   credit.innerText=`₹${formatNumber(c)}`;
   debit.innerText=`₹${formatNumber(d)}`;
   saving.childNodes[0].nodeValue=`₹${formatNumber(net)} `;
 
   if(net>0){
-    savingArrow.innerHTML=`<svg width="26" height="26" viewBox="0 0 24 24" stroke="var(--success)" stroke-width="2.8" fill="none"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`;
-  }else if(net<0){
-    savingArrow.innerHTML=`<svg width="26" height="26" viewBox="0 0 24 24" stroke="var(--danger)" stroke-width="2.8" fill="none"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>`;
-  }else savingArrow.innerHTML="";
+    savingArrow.innerHTML=`<svg width="26" height="26" stroke="#16a34a" stroke-width="2.8" fill="none" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`;
+  } else if(net<0){
+    savingArrow.innerHTML=`<svg width="26" height="26" stroke="#dc2626" stroke-width="2.8" fill="none" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg>`;
+  }
 }
 
-/* MONTH TABLE */
+/* ----------------------- */
+/*   MONTH WISE + CHART    */
+/* ----------------------- */
+
 function monthWise(){
   const map={};
   filteredData.forEach(r=>{
     const d=parseDate(getValue(r,"date"));
-    const k=d.getMonth()+"-"+d.getFullYear();
-    if(!map[k]) map[k]={c:0,d:0,date:d};
-    map[k].c+=+getValue(r,"credit")||0;
-    map[k].d+=+getValue(r,"debit")||0;
+    const key=d.getMonth()+"-"+d.getFullYear();
+    if(!map[key]) map[key]={c:0,d:0,date:d};
+    map[key].c+=+getValue(r,"credit")||0;
+    map[key].d+=+getValue(r,"debit")||0;
   });
 
   monthTable.innerHTML='<tr><th>Month</th><th>Credit</th><th>Debit</th><th>Saving</th></tr>';
+
   const labels=[],vals=[];
   Object.values(map).sort((a,b)=>a.date-b.date).forEach(v=>{
     const s=v.c-v.d;
     const lab=v.date.toLocaleString("en",{month:"short",year:"numeric"});
-    monthTable.innerHTML+=`<tr><td>${lab}</td><td>${formatNumber(v.c)}</td><td>${formatNumber(v.d)}</td><td>${formatNumber(s)}</td></tr>`;
-    labels.push(lab);vals.push(s);
+
+    monthTable.innerHTML+=`
+      <tr><td>${lab}</td>
+      <td>${formatNumber(v.c)}</td>
+      <td>${formatNumber(v.d)}</td>
+      <td>${formatNumber(s)}</td></tr>`;
+
+    labels.push(lab); vals.push(s);
   });
 
   if(monthChart) monthChart.destroy();
-  monthChart=new Chart(document.getElementById("monthChart"),{
+  monthChart=new Chart(document.getElementById("monthChart"), { 
     type:"line",
-    data:{labels,datasets:[{label:"Net Saving",data:vals,borderWidth:3,tension:.35}]}
+    data:{labels,
+    datasets:[{label:"Net Saving",data:vals,borderWidth:3,tension:.35}]}
   });
 }
 
-/* WEEKLY */
+/* ----------------------- */
+/*       WEEKLY GRAPH      */
+/* ----------------------- */
+
 function weeklyWise(){
-  if(monthFilter.value===""){weeklySection.style.display="none";return;}
+  if(monthFilter.value===""){weeklySection.style.display="none"; return;}
   weeklySection.style.display="block";
 
   const weeks=[0,0,0,0,0];
@@ -507,159 +508,124 @@ function weeklyWise(){
   });
 }
 
-/* MERCHANT TABLE */
-function merchantWise() {
-  merchantTable.innerHTML = `
+/* ----------------------- */
+/*     MERCHANT TABLE      */
+/* ----------------------- */
+
+function merchantWise(){
+  const rows=[];
+
+  filteredData.forEach(r=>{
+    const d=parseDate(getValue(r,"date"));
+    rows.push({
+      date:d,
+      dateLabel:d.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}),
+      merchant:getValue(r,"merchant name"),
+      credit:+getValue(r,"credit")||0,
+      debit:+getValue(r,"debit")||0
+    });
+  });
+
+  rows.sort((a,b)=>a.date-b.date);
+
+  let html=`
     <tr>
       <th>Date</th>
       <th>Merchant</th>
       <th>Credit</th>
       <th>Debit</th>
-    </tr>
-  `;
+    </tr>`;
 
-  const rows = [];
-
-  filteredData.forEach(r => {
-    const d = parseDate(getValue(r, "date"));
-    const merchant = getValue(r, "merchant name");
-    const credit = +getValue(r, "credit") || 0;
-    const debit = +getValue(r, "debit") || 0;
-
-    rows.push({
-      date: d,
-      dateLabel: d.toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric"
-      }),
-      merchant,
-      credit,
-      debit
-    });
-  });
-
-  rows.sort((a, b) => a.date - b.date);
-
-  rows.forEach(row => {
-    merchantTable.innerHTML += `
+  rows.forEach(r=>{
+    html+=`
       <tr class="table-row-highlight">
-        <td>${row.dateLabel}</td>
-        <td>${row.merchant || "-"}</td>
-
-        <td class="${row.credit > 0 ? "credit-cell" : ""}">
-            ${row.credit > 0 ? "₹" + formatNumber(row.credit) : "-"}
+        <td>${r.dateLabel}</td>
+        <td data-original="${r.merchant || "-"}">${r.merchant || "-"}</td>
+        <td class="${r.credit>0?"credit-cell":""}">
+            ${r.credit>0?"₹"+formatNumber(r.credit):"-"}
         </td>
-
-        <td class="${row.debit > 0 ? "debit-cell" : ""}">
-            ${row.debit > 0 ? "₹" + formatNumber(row.debit) : "-"}
+        <td class="${r.debit>0?"debit-cell":""}">
+            ${r.debit>0?"₹"+formatNumber(r.debit):"-"}
         </td>
-      </tr>
-    `;
+      </tr>`;
   });
+
+  merchantTable.innerHTML=html;
 }
 
+/* ----------------------- */
+/*       AI INSIGHTS       */
+/* ----------------------- */
 
-function generateAIInsight() {
-  const insightBox = document.getElementById("aiInsight");
-  insightBox.style.display = "none";
+function generateAIInsight(){
+  const box=document.getElementById("aiInsight");
+  box.style.display="none";
 
-  let totalCredit = 0,
-      totalDebit = 0;
+  let totalCredit=0,totalDebit=0;
+  const merchantTotals={};
+  let totalSpend=0;
 
-  const merchantTotals = {};
-  let totalSpend = 0;
+  filteredData.forEach(r=>{
+    const m=getValue(r,"merchant name");
+    const c=+getValue(r,"credit")||0;
+    const d=+getValue(r,"debit")||0;
 
-  filteredData.forEach(r => {
-    const merchant = getValue(r, "merchant name");
-    const credit = +getValue(r, "credit") || 0;
-    const debit = +getValue(r, "debit") || 0;
+    totalCredit+=c;
+    totalDebit+=d;
 
-    totalCredit += credit;
-    totalDebit += debit;
-
-    if (merchant && debit > 0) {
-      merchantTotals[merchant] = (merchantTotals[merchant] || 0) + debit;
-      totalSpend += debit;
+    if(m && d>0){
+      merchantTotals[m]=(merchantTotals[m]||0)+d;
+      totalSpend+=d;
     }
   });
 
-  const netSaving = totalCredit - totalDebit;
-  if (totalSpend === 0) return;
+  if(totalSpend===0) return;
 
-  // Find top merchant
-  let topMerchant = "";
-  let topAmount = 0;
-
-  for (let m in merchantTotals) {
-    if (merchantTotals[m] > topAmount) {
-      topMerchant = m;
-      topAmount = merchantTotals[m];
+  let topMerchant="",topAmount=0;
+  for(const m in merchantTotals){
+    if(merchantTotals[m]>topAmount){
+      topMerchant=m; topAmount=merchantTotals[m];
     }
   }
 
-  const percent = ((topAmount / totalSpend) * 100).toFixed(1);
+  const percent=((topAmount/totalSpend)*100).toFixed(1);
+  const netSaving=totalCredit-totalDebit;
 
-  /* Dynamic period title */
-  let period = "overall";
-
-  if (!yearFilter.value && monthFilter.value !== "") {
-    const monthName = new Date(0, monthFilter.value)
-      .toLocaleString("en", { month: "long" });
-    period = `${monthName} (all years)`;
+  let period="overall";
+  if(!yearFilter.value && monthFilter.value!==""){
+    const m=new Date(0,monthFilter.value).toLocaleString("en",{month:"long"});
+    period=`${m} (all years)`;
+  }
+  if(yearFilter.value && monthFilter.value===""){
+    period=`the year ${yearFilter.value}`;
+  }
+  if(yearFilter.value && monthFilter.value!==""){
+    const m=new Date(0,monthFilter.value).toLocaleString("en",{month:"long"});
+    period=`${m} ${yearFilter.value}`;
   }
 
-  if (yearFilter.value && monthFilter.value === "") {
-    period = `the year ${yearFilter.value}`;
-  }
-
-  if (yearFilter.value && monthFilter.value !== "") {
-    const monthName = new Date(0, monthFilter.value)
-      .toLocaleString("en", { month: "long" });
-    period = `${monthName} ${yearFilter.value}`;
-  }
-
-  /* BUILD THE INSIGHT BOX */
-  insightBox.innerHTML = `
-    🧠 <b>AI Spending Insight</b><br><br>
-
-    📌 In <b>${period}</b>, your highest spending was on
-    <b>${topMerchant.toUpperCase()}</b> —
+  box.innerHTML=`
+    🧠 <b>AI Insight</b><br><br>
+    📌 In <b>${period}</b>, your highest spending was on 
+    <b>${topMerchant.toUpperCase()}</b> — 
     <b>₹${formatNumber(topAmount)}</b>
     <span style="color:#6b7280">(${percent}% of total spending)</span><br><br>
-
-    💰 <b>Your net saving in this period:</b>
-    <span style="color:${netSaving >= 0 ? '#16a34a' : '#dc2626'}; font-weight:600;">
+    💰 <b>Your net saving:</b> 
+    <span style="color:${netSaving>=0?"#16a34a":"#dc2626"};font-weight:600">
       ₹${formatNumber(netSaving)}
     </span><br><br>
-
     ${
-      percent > 40
-        ? "⚠️ This merchant dominates your expenses. Reducing spend here could significantly improve savings."
-        : percent > 25
-        ? "🔍 This is one of your major expense areas. Tracking it can help optimize your budget."
-        : "✅ Your spending looks well distributed across merchants."
+      percent>40
+      ? "⚠️ This merchant dominates expenses."
+      : percent>25
+      ? "🔍 One of your major expense zones."
+      : "✅ Spending is well distributed."
     }
   `;
 
-  insightBox.style.display = "block";
+  box.style.display="block";
 }
-
 </script>
-<div id="filterLoader" style="
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(255,255,255,0.75);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    display: none;
-">
-    <div class="loader"></div>
-</div>
 
 </body>
 </html>
