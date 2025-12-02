@@ -635,13 +635,20 @@ function monthWise(){
       const s = v.c - v.d;
       const lab = v.date.toLocaleString("en",{month:"short", year:"numeric"});
 
-      monthTable.innerHTML += `
-        <tr>
-          <td>${lab}</td>
-          <td>${formatNumber(v.c)}</td>
-          <td>${formatNumber(v.d)}</td>
-          <td>${formatNumber(s)}</td>
-        </tr>`;
+monthTable.innerHTML += `
+  <tr>
+    <td>${lab}</td>
+    <td class="${v.c > 0 ? "credit-cell" : ""}">
+      ${v.c > 0 ? "₹" + formatNumber(v.c) : "-"}
+    </td>
+    <td class="${v.d > 0 ? "debit-cell" : ""}">
+      ${v.d > 0 ? "₹" + formatNumber(v.d) : "-"}
+    </td>
+    <td class="${s >= 0 ? "credit-cell" : "debit-cell"}">
+      ₹${formatNumber(s)}
+    </td>
+  </tr>`;
+
 
       labels.push(lab);
       vals.push(s);
