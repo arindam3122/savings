@@ -693,38 +693,67 @@ function monthWise(){
 }
 
 /* --- Weekly chart --- */
-function weeklyWise(){
-  if(monthFilter.value === ""){
+function weeklyWise() {
+  if (monthFilter.value === "") {
     weeklySection.style.display = "none";
     return;
   }
   weeklySection.style.display = "block";
 
-  const weeks = [0,0,0,0,0];
-  filteredData.forEach(r=>{
-    const d = parseDate(getValue(r,"date"));
-    const deb = +getValue(r,"debit") || 0;
-    if(deb > 0){
-      const w = Math.min(Math.floor((d.getDate()-1)/7), 4);
-      weeks[w] += deb;
+  // Helper to convert week number to 1st, 2nd, 3rd, 4th, 5th
+  function ordinal(n) {
+    return n === 1 ? "1st" :
+           n === 2 ? "2nd" :
+           n === 3 ? "3rd" : n + "th";
+  }
+
+  const weekRanges = [
+    `${ordinal(1)} Week (1–7)`,
+    `${ordinal(2)} Week (8–14)`,
+    `${ordinal(3)} Week (15–21)`,
+    `${ordinal(4)} Week (22–28)`,
+    `${ordinal(5)} Week (29–31)`
+  ];
+
+  const weekTotals = [0, 0, 0, 0, 0];
+  const weekCounts = [0, 0, 0, 0, 0];
+
+  filteredData.forEach(r => {
+    const d = parseDate(getValue(r, "date"));
+    const deb = +getValue(r, "debit") || 0;
+
+    if (deb > 0) {
+      const w = Math.min(Math.floor((d.getDate() - 1) / 7), 4);
+      weekTotals[w] += deb;
+      weekCounts[w] += 1;
     }
   });
 
-  if(weeklyChart) weeklyChart.destroy();
+  // Compute averages
+  const weekAverages = weekTotals.map((total, i) =>
+    weekCounts[i] > 0 ? total / weekCounts[i] : 0
+  );
+
+  if (weeklyChart) weeklyChart.destroy();
+
   weeklyChart = new Chart(document.getElementById("weeklyChart"), {
-    type:"line",
-    data:{
-      labels:["Week 1","Week 2","Week 3","Week 4","Week 5"],
-      datasets:[{
-        label:"Weekly Spending",
-        data:weeks,
-        borderWidth:3,
-        tension:0.35
+    type: "line",
+    data: {
+      labels: weekRanges,
+      datasets: [{
+        label: "Average Weekly Spending",
+        data: weekAverages,
+        borderWidth: 3,
+        tension: 0.35
       }]
     },
-    options:{ responsive:true, maintainAspectRatio:false }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
   });
 }
+
 
 /* --- Merchant table --- */
 function merchantWise(){
