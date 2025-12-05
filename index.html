@@ -6,6 +6,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
 
 <style>
 :root{
@@ -731,23 +733,25 @@ function weeklyWise() {
         borderWidth: 3,
         tension: 0.35,
         pointRadius: 6,
-        pointHoverRadius: 10,   // Larger on hover
-        pointHoverBackgroundColor: pointColors,
+        pointHoverRadius: 10,
         pointBackgroundColor: pointColors,
-        
-        // Glow effect on hover
+        pointHoverBackgroundColor: pointColors,
         pointHoverBorderWidth: 15,
-        pointHoverBorderColor: function(ctx) {
-          return ctx.dataset.pointBackgroundColor[ctx.dataIndex] + "40";
-        },
+        pointHoverBorderColor: (ctx) =>
+          ctx.dataset.pointBackgroundColor[ctx.dataIndex] + "40",
 
-        fill: true, // Enable area gradient
+        fill: true,
         backgroundColor: function(context) {
           const chart = context.chart;
           const { ctx, chartArea } = chart;
           if (!chartArea) return null;
 
-          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          const gradient = ctx.createLinearGradient(
+            0,
+            chartArea.top,
+            0,
+            chartArea.bottom
+          );
           gradient.addColorStop(0, "rgba(79, 70, 229, 0.35)");
           gradient.addColorStop(1, "rgba(79, 70, 229, 0.0)");
           return gradient;
@@ -755,9 +759,20 @@ function weeklyWise() {
 
         segment: {
           borderColor: ctx => pointColors[ctx.p0DataIndex]
+        },
+
+        // DATA LABELS ABOVE POINTS
+        datalabels: {
+          align: "top",
+          anchor: "end",
+          color: "#374151",
+          font: { weight: "bold", size: 12 },
+          formatter: value => value.toFixed(2)
         }
       }]
     },
+
+    plugins: [ChartDataLabels],
 
     options: {
       responsive: true,
@@ -776,14 +791,11 @@ function weeklyWise() {
       scales: {
         y: {
           ticks: {
-            callback: function(value) {
-              return value.toFixed(2);
-            }
+            callback: (value) => value.toFixed(2)
           }
         }
       },
 
-      // Apply gradient line after draw
       animation: {
         onComplete: () => {
           const chart = weeklyChart;
@@ -794,10 +806,40 @@ function weeklyWise() {
           chart.data.datasets[0].borderColor = gradient;
           chart.update();
         }
+      },
+
+      // CLICKABLE WEEK SEGMENTS
+      onClick: (event, elements) => {
+        if (elements.length > 0) {
+          const index = elements[0].index; // week index (0–4)
+          filterTransactionsByWeek(index);
+        }
       }
     }
   });
 }
+
+/* NEW: Filter merchant table by week */
+function filterTransactionsByWeek(weekIndex) {
+  const start = weekIndex * 7 + 1;
+  const end = Math.min(start + 6, 31);
+
+  const filtered = rawData.filter(r => {
+    const d = parseDate(getValue(r, "date"));
+    const day = d.getDate();
+
+    return (
+      (!monthFilter.value || d.getMonth() == monthFilter.value) &&
+      day >= start && day <= end
+    );
+  });
+
+  filteredData = filtered;
+
+  // re-render full dashboard with new filtered data
+  renderAll();
+}
+
 
 
 /* --- Merchant table --- */
