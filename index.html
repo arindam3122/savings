@@ -626,71 +626,50 @@ function renderAll(){
 }
 
 /* --- Month-wise --- */
-function monthWise(){
+function monthWise() {
   const map = {};
-  filteredData.forEach(r=>{
-    const d = parseDate(getValue(r,"date"));
+  filteredData.forEach(r => {
+    const d = parseDate(getValue(r, "date"));
     const key = d.getMonth() + "-" + d.getFullYear();
-    if(!map[key]) map[key] = { c:0, d:0, date: d };
-    map[key].c += +getValue(r,"credit") || 0;
-    map[key].d += +getValue(r,"debit") || 0;
+    if (!map[key]) map[key] = { c: 0, d: 0, date: d };
+    map[key].c += +getValue(r, "credit") || 0;
+    map[key].d += +getValue(r, "debit") || 0;
   });
 
   monthTable.innerHTML = '<tr><th>Month</th><th>Credit</th><th>Debit</th><th>Saving</th></tr>';
 
   const labels = [], vals = [];
+
   Object.values(map)
-    .sort((a,b) => a.date - b.date)
+    .sort((a, b) => a.date - b.date)
     .forEach(v => {
       const s = v.c - v.d;
-      const lab = v.date.toLocaleString("en",{month:"short", year:"numeric"});
-
- const arrow = s >= 0 
-  ? `<svg width="20" height="20" stroke="#16a34a" stroke-width="2.5" fill="none" viewBox="0 0 24 24">
-       <path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>
-     </svg>`
-  : `<svg width="20" height="20" stroke="#dc2626" stroke-width="2.5" fill="none" viewBox="0 0 24 24">
-       <path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/>
-     </svg>`;
-
- monthTable.innerHTML += `
-  <tr class="month-row-hover">
-    <td>${lab}</td>
-
-    <td class="${v.c > 0 ? "credit-cell" : ""}">
-      ${v.c > 0 ? "₹" + formatNumber(v.c) : "-"}
-    </td>
-
-    <td class="${v.d > 0 ? "debit-cell" : ""}">
-      ${v.d > 0 ? "₹" + formatNumber(v.d) : "-"}
-    </td>
-
-    <td class="${s >= 0 ? "credit-cell" : "debit-cell"}">
-      ₹${formatNumber(s)} &nbsp; ${arrow}
-    </td>
-  </tr>`;
-
-
+      const lab = v.date.toLocaleString("en", { month: "short", year: "numeric" });
 
       labels.push(lab);
-      vals.push(s);
+      vals.push(Number(s.toFixed(2))); // optional rounding
     });
 
-  if(monthChart) monthChart.destroy();
+  if (monthChart) monthChart.destroy();
+
   monthChart = new Chart(document.getElementById("monthChart"), {
-    type:"line",
-    data:{
-      labels:labels,
-      datasets:[{
-        label:"Net Saving",
-        data:vals,
-        borderWidth:3,
-        tension:0.35
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Net Saving",
+        data: vals,
+        borderWidth: 3,
+        tension: 0.35
       }]
     },
-    options:{ responsive:true, maintainAspectRatio:false }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
   });
 }
+
 
 /* --- Weekly chart --- */
 function weeklyWise() {
@@ -700,7 +679,6 @@ function weeklyWise() {
   }
   weeklySection.style.display = "block";
 
-  // Helper to convert week number to 1st, 2nd, 3rd, 4th, 5th
   function ordinal(n) {
     return n === 1 ? "1st" :
            n === 2 ? "2nd" :
@@ -729,7 +707,6 @@ function weeklyWise() {
     }
   });
 
-  // Compute averages
   const weekAverages = weekTotals.map((total, i) =>
     weekCounts[i] > 0 ? total / weekCounts[i] : 0
   );
@@ -749,10 +726,31 @@ function weeklyWise() {
     },
     options: {
       responsive: true,
-      maintainAspectRatio: false
+      maintainAspectRatio: false,
+
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return "Average Weekly Spending: " + context.raw.toFixed(2);
+            }
+          }
+        }
+      },
+
+      scales: {
+        y: {
+          ticks: {
+            callback: function(value) {
+              return value.toFixed(2);
+            }
+          }
+        }
+      }
     }
   });
 }
+
 
 
 /* --- Merchant table --- */
