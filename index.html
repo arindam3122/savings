@@ -749,27 +749,37 @@ monthChart = new Chart(document.getElementById("monthChart"), {
     datasets: [{
       label: "Net Saving",
       data: savingValues,
+      tension: 0.45,
       borderWidth: 3,
-      tension: 0.35,
-      fill: false,
+      fill: false, // ✅ NO SHADING
 
-      pointRadius: 6,
-      pointHoverRadius: 9,
+      // POINT STYLING
+      pointRadius: 7,
+      pointHoverRadius: 11,
       pointBorderWidth: 3,
-
-      // Point styling
-      pointBackgroundColor: ctx =>
-        ctx.raw > 0 ? "#22c55e" : "#fb923c",
-
       pointBorderColor: "#ffffff",
 
-      // Line color per segment
+      pointBackgroundColor: ctx =>
+        ctx.raw >= 0 ? "#22c55e" : "#ef4444",
+
+      // ✅ LINE COLOR PER SEGMENT (GREEN / RED)
       segment: {
         borderColor: ctx =>
-          ctx.p1.parsed.y >= 0 ? "#22c55e" : "#fb923c"
+          ctx.p1.parsed.y >= 0 ? "#22c55e" : "#ef4444"
+      },
+
+      // VALUE LABELS
+      datalabels: {
+        align: "top",
+        anchor: "end",
+        font: { weight: "bold", size: 12 },
+        color: ctx => ctx.raw >= 0 ? "#16a34a" : "#dc2626",
+        formatter: v => "₹" + formatNumber(v)
       }
     }]
   },
+
+  plugins: [ChartDataLabels],
 
   options: {
     responsive: true,
@@ -777,27 +787,18 @@ monthChart = new Chart(document.getElementById("monthChart"), {
 
     plugins: {
       legend: {
-        display: true,
-        position: "top",
-        labels: {
-          boxWidth: 18,
-          boxHeight: 8,
-          generateLabels: () => ([
-            { text: "Surplus (Saving)", strokeStyle: "#22c55e", lineWidth: 3 },
-            { text: "Deficit (Overspend)", strokeStyle: "#fb923c", lineWidth: 3 }
-          ])
-        }
+        display: false
       },
 
       tooltip: {
         backgroundColor: "#111827",
-        titleColor: "#fff",
+        titleColor: "#ffffff",
         bodyColor: "#e5e7eb",
-        cornerRadius: 8,
+        cornerRadius: 10,
         padding: 12,
         callbacks: {
           label: ctx =>
-            (ctx.raw >= 0 ? "Saved: ₹" : "Overspent: ₹") +
+            (ctx.raw >= 0 ? "Saved: ₹" : "Loss: ₹") +
             formatNumber(Math.abs(ctx.raw))
         }
       }
@@ -805,36 +806,36 @@ monthChart = new Chart(document.getElementById("monthChart"), {
 
     scales: {
       x: {
-        grid: {
-          display: false
-        },
+        grid: { display: false },
         ticks: {
           color: "#6b7280",
-          font: { size: 11 }
+          font: { size: 12 }
         }
       },
 
       y: {
-        ticks: {
-          callback: v => "₹" + formatNumber(v),
-          color: "#6b7280",
-          font: { size: 11 }
-        },
         grid: {
           color: ctx =>
             ctx.tick.value === 0
-              ? "rgba(0,0,0,0.25)"
-              : "rgba(0,0,0,0.05)",
+              ? "rgba(0,0,0,0.35)" // center reference line
+              : "rgba(0,0,0,0.06)",
           borderDash: ctx =>
             ctx.tick.value === 0 ? [6, 6] : []
+        },
+        ticks: {
+          callback: v => "₹" + formatNumber(v),
+          color: "#6b7280"
         }
       }
+    },
+
+    animation: {
+      duration: 800,
+      easing: "easeOutQuart"
     }
   }
 });
 }
-
-
 /* --- Weekly chart --- */
 function weeklyWise() {
   if (monthFilter.value === "") {
