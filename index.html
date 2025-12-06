@@ -313,6 +313,37 @@ table tr {
   transition: opacity 0.5s ease;
   pointer-events: none;
 }
+.month-credit {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.month-debit {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.month-saving-positive {
+  color: #16a34a; /* GREEN */
+  font-weight: 700;
+}
+
+.month-saving-negative {
+  color: #dc2626; /* RED */
+  font-weight: 700;
+}
+
+.saving-arrow {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+}
+
+.saving-arrow svg {
+  width: 16px;
+  height: 16px;
+}
+
 
 
 </style>
@@ -630,39 +661,99 @@ function renderAll(){
 /* --- Month-wise --- */
 function monthWise() {
   const map = {};
+
+  // Aggregate month-wise data
   filteredData.forEach(r => {
     const d = parseDate(getValue(r, "date"));
     const key = d.getMonth() + "-" + d.getFullYear();
-    if (!map[key]) map[key] = { c: 0, d: 0, date: d };
-    map[key].c += +getValue(r, "credit") || 0;
-    map[key].d += +getValue(r, "debit") || 0;
+
+    if (!map[key]) {
+      map[key] = {
+        credit: 0,
+        debit: 0,
+        date: d
+      };
+    }
+
+    map[key].credit += +getValue(r, "credit") || 0;
+    map[key].debit  += +getValue(r, "debit") || 0;
   });
 
-  monthTable.innerHTML = '<tr><th>Month</th><th>Credit</th><th>Debit</th><th>Saving</th></tr>';
+  // Build table header
+  monthTable.innerHTML = `
+    <tr>
+      <th>Month</th>
+      <th>Credit</th>
+      <th>Debit</th>
+      <th>Saving</th>
+    </tr>
+  `;
 
-  const labels = [], vals = [];
+  const labels = [];
+  const savingValues = [];
 
+  // Build rows
   Object.values(map)
     .sort((a, b) => a.date - b.date)
     .forEach(v => {
-      const s = v.c - v.d;
-      const lab = v.date.toLocaleString("en", { month: "short", year: "numeric" });
+      const saving = v.credit - v.debit;
+      const isPositive = saving >= 0;
 
-      labels.push(lab);
-      vals.push(Number(s.toFixed(2))); // optional rounding
+      const label = v.date.toLocaleString("en", {
+        month: "short",
+        year: "numeric"
+      });
+
+      labels.push(label);
+      savingValues.push(Number(saving.toFixed(2)));
+
+      const savingClass = isPositive
+        ? "month-saving-positive"
+        : "month-saving-negative";
+
+      const arrow = isPositive
+        ? `<span class="saving-arrow">
+            <svg stroke="#16a34a" stroke-width="2.5" fill="none" viewBox="0 0 24 24">
+              <path d="M12 19V5"/>
+              <path d="M5 12l7-7 7 7"/>
+            </svg>
+          </span>`
+        : `<span class="saving-arrow">
+            <svg stroke="#dc2626" stroke-width="2.5" fill="none" viewBox="0 0 24 24">
+              <path d="M12 5v14"/>
+              <path d="M19 12l-7 7-7-7"/>
+            </svg>
+          </span>`;
+
+      monthTable.innerHTML += `
+        <tr class="month-row-hover">
+          <td><b>${label}</b></td>
+          <td class="month-credit">₹${formatNumber(v.credit)}</td>
+          <td class="month-debit">₹${formatNumber(v.debit)}</td>
+          <td class="${savingClass}">
+            ₹${formatNumber(saving)}
+            ${arrow}
+          </td>
+        </tr>
+      `;
     });
 
+  // Destroy old chart
   if (monthChart) monthChart.destroy();
 
+  // Draw chart
   monthChart = new Chart(document.getElementById("monthChart"), {
     type: "line",
     data: {
       labels: labels,
       datasets: [{
         label: "Net Saving",
-        data: vals,
+        data: savingValues,
         borderWidth: 3,
-        tension: 0.35
+        tension: 0.35,
+        borderColor: "#2563eb",
+        pointBackgroundColor: "#2563eb",
+        fill: false
       }]
     },
     options: {
@@ -671,6 +762,8 @@ function monthWise() {
     }
   });
 }
+
+
 
 
 /* --- Weekly chart --- */
