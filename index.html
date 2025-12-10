@@ -343,8 +343,40 @@ table tr {
   width: 16px;
   height: 16px;
 }
+/* Upload toast (success + error) */
+#uploadToast {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  box-shadow: 0 14px 32px rgba(0,0,0,0.2);
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  transition: all .35s ease;
+  z-index: 4000;
+  max-width: 340px;
+}
 
+/* Success */
+#uploadToast.success {
+  background: #008d34;
+}
 
+/* Error */
+#uploadToast.error {
+  background: #dc2626;
+}
+
+/* Visible */
+#uploadToast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 </style>
 </head>
@@ -551,6 +583,7 @@ async function loadExcel(file){
     uploadContent.innerHTML = '<div class="upload-icon">✅</div>';
     uploadStatus.innerHTML = `<span class="success">Loaded ${file.name}</span>`;
     filterLoader.classList.remove("show");
+    showToast(`✅ ${file.name} uploaded successfully`, "success");
   };
 
   reader.readAsArrayBuffer(file);
@@ -592,6 +625,10 @@ function applyFilter(){
 
     renderAll();
     filterLoader.classList.remove("show");
+
+    // ✅ Show filter applied toast
+    showToast(getFilterToastMessage(), "success");
+
   }, 200);
 }
 
@@ -647,6 +684,26 @@ function totals(){
         <path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/>
       </svg>`;
   }
+}
+function getFilterToastMessage() {
+  const year = yearFilter.value;
+  const month = monthFilter.value;
+
+  if (!year && !month) {
+    return "🔄 Filters reset — showing all data";
+  }
+
+  if (year && !month) {
+    return `✅ Filter applied: ${year} (All Months)`;
+  }
+
+  if (!year && month) {
+    const m = new Date(0, month).toLocaleString("en", { month: "long" });
+    return `✅ Filter applied: ${m} (All Years)`;
+  }
+
+  const m = new Date(0, month).toLocaleString("en", { month: "long" });
+  return `✅ Filter applied: ${m} ${year}`;
 }
 
 /* --- Renderer --- */
@@ -1118,8 +1175,26 @@ window.addEventListener("load", () => {
     loader.style.display = "none";
   }, 500); // match fade-out time
 });
+function showToast(message, type = "success") {
+  const toast = document.getElementById("uploadToast");
+
+  toast.className = ""; // reset
+  toast.classList.add(type);
+  toast.innerText = message;
+
+  // force reflow for animation reset
+  toast.offsetHeight;
+
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3500);
+}
 
 </script>
+<!-- Upload toast -->
+<div id="uploadToast"></div>
 
 </body>
 </html>
