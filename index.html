@@ -481,6 +481,40 @@ header,
   cursor: not-allowed;
   box-shadow: none;
 }
+/* ---------- TABLE SHIMMER LOADER ---------- */
+.shimmer-row td {
+  height: 18px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    #f1f5f9 25%,
+    #e5e7eb 37%,
+    #f1f5f9 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+/* ---------- TABLE SPINNER ---------- */
+.table-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.table-spinner .spinner {
+  width: 34px;
+  height: 34px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
 
 </style>
 </head>
@@ -603,6 +637,17 @@ function parseDate(v){
   const p = v.split("-");
   return new Date(p[2], p[1]-1, p[0]);
 }
+function showTableSpinner() {
+  merchantTable.innerHTML = `
+    <tr>
+      <td colspan="4">
+        <div class="table-spinner">
+          <div class="spinner"></div>
+        </div>
+      </td>
+    </tr>
+  `;
+}
 
 /* --- Search --- */
 let searchTimeout = null;
@@ -641,6 +686,26 @@ function merchantSearch(){
       merchantCell.innerHTML = originalText;
     }
   }
+}
+function showTableShimmer(rows = 6) {
+  let html = `
+    <tr>
+      <th>Date</th>
+      <th>Merchant</th>
+      <th>Credit</th>
+      <th>Debit</th>
+    </tr>
+  `;
+
+  for (let i = 0; i < rows; i++) {
+    html += `
+      <tr class="shimmer-row">
+        <td></td><td></td><td></td><td></td>
+      </tr>
+    `;
+  }
+
+  merchantTable.innerHTML = html;
 }
 
 /* --- File Upload --- */
@@ -756,40 +821,41 @@ function applyDateFilter() {
   const selectedDate = document.getElementById("dateFilter").value;
   if (!selectedDate) return;
 
-  const [year, month, day] = selectedDate.split("-").map(Number);
+  // 👇 SHOW SPINNER
+  showTableSpinner();
 
-  const result = filteredData.filter(r => {
-    const d = parseDate(getValue(r, "date"));
-    return (
-      d.getFullYear() === year &&
-      d.getMonth() === month - 1 &&
-      d.getDate() === day
-    );
-  });
+  setTimeout(() => {
+    const [year, month, day] = selectedDate.split("-").map(Number);
 
-  if (result.length === 0) {
-    merchantTable.innerHTML = `
-      <tr>
-        <td colspan="4" style="
-          text-align:center;
-          padding:26px;
-          color:#6b7280;
-          font-weight:600;
-        ">
-          ❌ No transactions found for this date<br>
-          <span style="font-size:13px;">
-            Try adjusting Year / Month filters
-          </span>
-        </td>
-      </tr>
-    `;
+    const result = filteredData.filter(r => {
+      const d = parseDate(getValue(r, "date"));
+      return (
+        d.getFullYear() === year &&
+        d.getMonth() === month - 1 &&
+        d.getDate() === day
+      );
+    });
 
-    showToast("⚠️ No data for selected date in current filter", "error");
-    return;
-  }
+    if (result.length === 0) {
+      merchantTable.innerHTML = `
+        <tr>
+          <td colspan="4" style="
+            text-align:center;
+            padding:26px;
+            color:#6b7280;
+            font-weight:600;
+          ">
+            ❌ No transactions found for this date
+          </td>
+        </tr>
+      `;
+      showToast("⚠️ No data for selected date", "error");
+      return;
+    }
 
-  merchantWiseWithData(result);
-  showToast(`📅 Showing transactions for ${day}/${month}/${year}`, "success");
+    merchantWiseWithData(result);
+    showToast(`📅 Showing transactions for ${day}/${month}/${year}`, "success");
+  }, 250); // short delay = smooth UX
 }
 
 
