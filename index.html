@@ -377,6 +377,53 @@ table tr {
   opacity: 1;
   transform: translateY(0);
 }
+/* Merchant Date Filter */
+.date-filter {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 14px;
+}
+
+.date-filter input[type="date"] {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  font-size: 14px;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.date-filter input[type="date"]:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.25);
+}
+
+.date-filter button {
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg,#4f46e5,#6366f1);
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(79,70,229,0.35);
+  transition: 0.25s ease;
+}
+
+.date-filter button:hover {
+  transform: translateY(-2px);
+}
+
+.date-filter button.reset {
+  background: #6b7280;
+  box-shadow: 0 8px 18px rgba(107,114,128,0.35);
+}
 
 </style>
 </head>
@@ -461,6 +508,12 @@ table tr {
 <!-- ---------------- MERCHANT TABLE ---------------- -->
 <div class="section">
   <h3>🏪 Merchant-wise Spending (Full Transaction Log)</h3>
+ <!-- Date Filter -->
+ <div class="date-filter">
+  <input type="date" id="dateFilter" />
+  <button onclick="applyDateFilter()">Filter</button>
+  <button class="reset" onclick="resetDateFilter()">Reset</button>
+ </div>
 
   <div id="aiInsight"
        style="background:#fef3c7;padding:16px;border-radius:14px;margin-bottom:18px;
@@ -579,6 +632,7 @@ async function loadExcel(file){
 
     loadFilters();
     renderAll();
+    syncDatePickerLimits();
 
     uploadContent.innerHTML = '<div class="upload-icon">✅</div>';
     uploadStatus.innerHTML = `<span class="success">Loaded ${file.name}</span>`;
@@ -612,6 +666,56 @@ function loadFilters(){
       </option>`;
   });
 }
+/*-----Filter functions-------*/
+let dateFilteredData = null;
+
+function applyDateFilter() {
+  const selectedDate = document.getElementById("dateFilter").value;
+  if (!selectedDate) return;
+
+  const [year, month, day] = selectedDate.split("-").map(Number);
+
+  const result = filteredData.filter(r => {
+    const d = parseDate(getValue(r, "date"));
+    return (
+      d.getFullYear() === year &&
+      d.getMonth() === month - 1 &&
+      d.getDate() === day
+    );
+  });
+
+  if (result.length === 0) {
+    merchantTable.innerHTML = `
+      <tr>
+        <td colspan="4" style="
+          text-align:center;
+          padding:26px;
+          color:#6b7280;
+          font-weight:600;
+        ">
+          ❌ No transactions found for this date<br>
+          <span style="font-size:13px;">
+            Try adjusting Year / Month filters
+          </span>
+        </td>
+      </tr>
+    `;
+
+    showToast("⚠️ No data for selected date in current filter", "error");
+    return;
+  }
+
+  merchantWiseWithData(result);
+  showToast(`📅 Showing transactions for ${day}/${month}/${year}`, "success");
+}
+
+
+function resetDateFilter() {
+  dateFilteredData = null;
+  document.getElementById("dateFilter").value = "";
+  merchantWise();
+  showToast("🔄 Date filter reset — showing all transactions", "success");
+}
 
 function applyFilter(){
   filterLoader.classList.add("show");
@@ -624,13 +728,13 @@ function applyFilter(){
     });
 
     renderAll();
+    syncDatePickerLimits(); // ✅ ADD THIS LINE
     filterLoader.classList.remove("show");
 
-    // ✅ Show filter applied toast
     showToast(getFilterToastMessage(), "success");
-
   }, 200);
 }
+
 
 /* --- Summary --- */
 function buildSummaryTitle(){
@@ -1099,6 +1203,67 @@ function merchantWise(){
   });
 
   merchantTable.innerHTML = html;
+}
+function merchantWiseWithData(data) {
+  const rows = [];
+
+  data.forEach(r => {
+    const d = parseDate(getValue(r,"date"));
+    rows.push({
+      date: d,
+      dateLabel: d.toLocaleDateString("en-GB",{day:"2-digit", month:"short", year:"numeric"}),
+      merchant: getValue(r,"merchant name"),
+      credit: +getValue(r,"credit") || 0,
+      debit: +getValue(r,"debit") || 0
+    });
+  });
+
+  rows.sort((a,b) => a.date - b.date);
+
+  let html = `
+    <tr>
+      <th>Date</th>
+      <th>Merchant</th>
+      <th>Credit</th>
+      <th>Debit</th>
+    </tr>`;
+
+  rows.forEach(r => {
+    const merchantSafe = r.merchant || "-";
+    html += `
+      <tr class="table-row-highlight">
+        <td>${r.dateLabel}</td>
+        <td>${escapeHtml(merchantSafe)}</td>
+        <td class="${r.credit>0 ? "credit-cell" : ""}">
+          ${r.credit>0 ? "₹"+formatNumber(r.credit) : "-"}
+        </td>
+        <td class="${r.debit>0 ? "debit-cell" : ""}">
+          ${r.debit>0 ? "₹"+formatNumber(r.debit) : "-"}
+        </td>
+      </tr>`;
+  });
+
+  merchantTable.innerHTML = html;
+}
+function syncDatePickerLimits() {
+  const dateInput = document.getElementById("dateFilter");
+  if (!dateInput || filteredData.length === 0) {
+    dateInput.min = "";
+    dateInput.max = "";
+    return;
+  }
+
+  const dates = filteredData.map(r =>
+    parseDate(getValue(r, "date"))
+  );
+
+  const minDate = new Date(Math.min(...dates));
+  const maxDate = new Date(Math.max(...dates));
+
+  const toISO = d => d.toISOString().split("T")[0];
+
+  dateInput.min = toISO(minDate);
+  dateInput.max = toISO(maxDate);
 }
 
 /* --- AI Insight --- */
