@@ -6,6 +6,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 
@@ -424,6 +426,63 @@ table tr {
   background: #6b7280;
   box-shadow: 0 8px 18px rgba(107,114,128,0.35);
 }
+.flatpickr-input {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  font-size: 14px;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+/* Calendar input field */
+#dateFilter,
+.flatpickr-input {
+  width: 160px;
+  padding: 10px 40px 10px 14px;
+  border-radius: 14px;
+  border: 2px solid #e5e7eb;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  background: #ffffff;
+  cursor: pointer;
+
+  /* subtle depth */
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+
+  /* smooth interaction */
+  transition: all 0.25s ease;
+}
+
+/* Hover effect */
+#dateFilter:hover {
+  border-color: #6366f1;
+  box-shadow: 0 10px 26px rgba(79, 70, 229, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Focus / active */
+#dateFilter:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+}
+
+/* Calendar icon (right side) */
+#dateFilter {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%236366f1' stroke-width='2' viewBox='0 0 24 24'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 18px;
+}
+
+/* Disabled state (if ever needed) */
+#dateFilter:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+  box-shadow: none;
+}
 
 </style>
 </head>
@@ -510,7 +569,7 @@ table tr {
   <h3>🏪 Merchant-wise Spending (Full Transaction Log)</h3>
  <!-- Date Filter -->
  <div class="date-filter">
-  <input type="date" id="dateFilter" />
+  <input type="text" id="dateFilter" placeholder="Select date" readonly>
   <button onclick="applyDateFilter()">Filter</button>
   <button class="reset" onclick="resetDateFilter()">Reset</button>
  </div>
@@ -632,6 +691,7 @@ async function loadExcel(file){
 
     loadFilters();
     renderAll();
+    initDatePicker();
     syncDatePickerLimits();
 
     uploadContent.innerHTML = '<div class="upload-icon">✅</div>';
@@ -641,6 +701,34 @@ async function loadExcel(file){
   };
 
   reader.readAsArrayBuffer(file);
+}
+let datePicker;
+
+function initDatePicker() {
+  // Destroy old picker (important when filters change)
+  if (datePicker) {
+    datePicker.destroy();
+  }
+
+  // Get all valid transaction dates
+  const validDates = [
+    ...new Set(
+      filteredData.map(r => {
+        const d = parseDate(getValue(r, "date"));
+        return d.toISOString().split("T")[0];
+      })
+    )
+  ];
+
+  // Initialize Flatpickr
+  datePicker = flatpickr("#dateFilter", {
+    dateFormat: "Y-m-d",
+    enable: validDates,     // ✅ ONLY THESE DATES ARE CLICKABLE
+    disableMobile: true,
+    onChange: function () {
+      applyDateFilter();
+    }
+  });
 }
 
 /* --- Filter System --- */
@@ -711,11 +799,11 @@ function applyDateFilter() {
 
 
 function resetDateFilter() {
-  dateFilteredData = null;
   document.getElementById("dateFilter").value = "";
   merchantWise();
   showToast("🔄 Date filter reset — showing all transactions", "success");
 }
+
 
 function applyFilter(){
   filterLoader.classList.add("show");
@@ -728,6 +816,7 @@ function applyFilter(){
     });
 
     renderAll();
+    initDatePicker();
     syncDatePickerLimits(); // ✅ ADD THIS LINE
     filterLoader.classList.remove("show");
 
