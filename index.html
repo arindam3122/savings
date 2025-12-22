@@ -752,8 +752,6 @@ function loadFilters(){
   });
 }
 /*-----Filter functions-------*/
-let dateFilteredData = null;
-
 function applyDateFilter() {
   const selectedDate = document.getElementById("dateFilter").value;
   if (!selectedDate) return;
@@ -1334,8 +1332,6 @@ function merchantWiseWithData(data) {
 function syncDatePickerLimits() {
   const dateInput = document.getElementById("dateFilter");
   if (!dateInput || filteredData.length === 0) {
-    dateInput.min = "";
-    dateInput.max = "";
     return;
   }
 
