@@ -515,6 +515,24 @@ header,
   border-radius: 50%;
   animation: spin 0.75s linear infinite;
 }
+/* ---------- Transaction Count Badge ---------- */
+#transactionCount {
+  padding: 14px 18px;
+  margin: 14px 0 20px;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  color: #065f46;
+  background: #ecfdf5;
+
+  border-left: 6px solid #10b981;
+  border-radius: 12px;
+
+  box-shadow: 0 10px 24px rgba(16,185,129,0.25);
+}
+
+
 
 </style>
 </head>
@@ -600,6 +618,15 @@ header,
   <h3>🏪 Merchant-wise Spending (Full Transaction Log)</h3>
  <!-- Date Filter -->
  <div class="date-filter">
+  <div id="transactionCount"
+     style="
+       margin: 10px 0 14px;
+       font-weight: 600;
+       color: #4f46e5;
+       display: none;
+     ">
+ </div>
+
   <input type="text" id="dateFilter" placeholder="Select date" readonly>
   <button class="reset" onclick="resetDateFilter()">Reset</button>
  </div>
@@ -822,12 +849,17 @@ function applyDateFilter() {
   const selectedDate = document.getElementById("dateFilter").value;
   if (!selectedDate) return;
 
-  // 👇 SHOW SPINNER
+  // Hide previous AI insight (avoid overlap)
+  document.getElementById("aiInsight").style.display = "none";
+
+  // Show table spinner
   showTableSpinner();
 
   setTimeout(() => {
     const [year, month, day] = selectedDate.split("-").map(Number);
+    const countBox = document.getElementById("transactionCount");
 
+    // Filter transactions for selected date
     const result = filteredData.filter(r => {
       const d = parseDate(getValue(r, "date"));
       return (
@@ -837,6 +869,12 @@ function applyDateFilter() {
       );
     });
 
+    /* ---------- SHOW TRANSACTION COUNT ---------- */
+    countBox.style.display = "block";
+    countBox.innerText =
+      `📌 ${result.length} transaction${result.length !== 1 ? "s" : ""} recorded on ${day}/${month}/${year}`;
+
+    /* ---------- NO DATA CASE ---------- */
     if (result.length === 0) {
       merchantTable.innerHTML = `
         <tr>
@@ -850,49 +888,44 @@ function applyDateFilter() {
           </td>
         </tr>
       `;
+
       showToast("⚠️ No data for selected date", "error");
       return;
     }
 
+    /* ---------- RENDER TABLE ---------- */
     merchantWiseWithData(result);
+
+    /* ---------- DATE-BASED AI INSIGHT ---------- */
     generateAIInsightFromData(
-     result,
-     `Spending insight for ${day}/${month}/${year}`
-     );
+      result,
+      `Spending insight for ${day}/${month}/${year}`
+    );
+
     showToast(`📅 Showing transactions for ${day}/${month}/${year}`, "success");
-  }, 250); // short delay = smooth UX
+
+  }, 250); // Smooth UX delay
 }
 
 
+document.getElementById("transactionCount").style.display = "none";
 function resetDateFilter() {
-  // 1️⃣ Clear calendar UI
   document.getElementById("dateFilter").value = "";
+  document.getElementById("transactionCount").style.display = "none";
+  document.getElementById("aiInsight").style.display = "none";
 
-  // 2️⃣ Hide transaction count
-  const countBox = document.getElementById("transactionCount");
-  if (countBox) countBox.style.display = "none";
-
-  // 3️⃣ Restore filteredData using YEAR + MONTH filters
   filteredData = rawData.filter(r => {
     const d = parseDate(getValue(r, "date"));
     return (!yearFilter.value || d.getFullYear() == yearFilter.value)
         && (!monthFilter.value || d.getMonth() == monthFilter.value);
   });
 
-  // 4️⃣ Hide date-based AI insight
-  document.getElementById("aiInsight").style.display = "none";
-
-  // 5️⃣ 🔥 IMPORTANT: Re-render EVERYTHING properly
   renderAll();
-
-  // 6️⃣ Re-sync calendar limits
   initDatePicker();
   syncDatePickerLimits();
 
   showToast("🔄 Date filter reset — showing all transactions", "success");
 }
-
-
 
  function applyFilter(){
   filterLoader.classList.add("show");
