@@ -767,6 +767,7 @@ async function loadExcel(file){
 let datePicker;
 
 function initDatePicker() {
+  document.getElementById("aiInsight").style.display = "none";
   // Destroy old picker (important when filters change)
   if (datePicker) {
     datePicker.destroy();
@@ -854,19 +855,46 @@ function applyDateFilter() {
     }
 
     merchantWiseWithData(result);
+    generateAIInsightFromData(
+     result,
+     `Spending insight for ${day}/${month}/${year}`
+     );
     showToast(`📅 Showing transactions for ${day}/${month}/${year}`, "success");
   }, 250); // short delay = smooth UX
 }
 
 
 function resetDateFilter() {
+  // 1️⃣ Clear calendar UI
   document.getElementById("dateFilter").value = "";
-  merchantWise();
+
+  // 2️⃣ Hide transaction count
+  const countBox = document.getElementById("transactionCount");
+  if (countBox) countBox.style.display = "none";
+
+  // 3️⃣ Restore filteredData using YEAR + MONTH filters
+  filteredData = rawData.filter(r => {
+    const d = parseDate(getValue(r, "date"));
+    return (!yearFilter.value || d.getFullYear() == yearFilter.value)
+        && (!monthFilter.value || d.getMonth() == monthFilter.value);
+  });
+
+  // 4️⃣ Hide date-based AI insight
+  document.getElementById("aiInsight").style.display = "none";
+
+  // 5️⃣ 🔥 IMPORTANT: Re-render EVERYTHING properly
+  renderAll();
+
+  // 6️⃣ Re-sync calendar limits
+  initDatePicker();
+  syncDatePickerLimits();
+
   showToast("🔄 Date filter reset — showing all transactions", "success");
 }
 
 
-function applyFilter(){
+
+ function applyFilter(){
   filterLoader.classList.add("show");
 
   setTimeout(() => {
@@ -1460,6 +1488,79 @@ function generateAIInsight(){
        percent > 25 ? "🔍 This is a major expense area." :
        "✅ Spending is reasonably distributed." }
   `;
+
+  box.style.display = "block";
+}
+function generateAIInsightFromData(data, label) {
+  const box = document.getElementById("aiInsight");
+  box.style.display = "none";
+
+  if (!data || data.length === 0) return;
+
+  let totalCredit = 0, totalDebit = 0;
+  const merchantTotals = {};
+  let totalSpend = 0;
+
+  data.forEach(r => {
+    const m = getValue(r, "merchant name");
+    const c = +getValue(r, "credit") || 0;
+    const d = +getValue(r, "debit") || 0;
+
+    totalCredit += c;
+    totalDebit += d;
+
+    if (m && d > 0) {
+      merchantTotals[m] = (merchantTotals[m] || 0) + d;
+      totalSpend += d;
+    }
+  });
+
+let topMerchant = "";
+let topAmount = 0;
+let percent = 0;
+
+if (totalSpend > 0) {
+  for (const m in merchantTotals) {
+    if (merchantTotals[m] > topAmount) {
+      topMerchant = m;
+      topAmount = merchantTotals[m];
+    }
+  }
+
+  percent = ((topAmount / totalSpend) * 100).toFixed(1);
+ }
+
+  const netSaving = totalCredit - totalDebit;
+
+ let insightText = "";
+
+ if (totalSpend > 0) {
+  insightText = `
+    🏪 Highest spending was on
+    <b>${escapeHtml(String(topMerchant).toUpperCase())}</b> —
+    <b>₹${formatNumber(topAmount)}</b>
+    <span style="color:#6b7280">(${percent}% of spending)</span>
+  `;
+ } else {
+  insightText = `
+    💸 No spending detected on this date.<br>
+    💰 Only income transactions were recorded.
+  `;
+ }
+
+ box.innerHTML = `
+  🧠 <b>AI Spending Insight</b><br><br>
+  📅 <b>${label}</b><br><br>
+
+  ${insightText}
+  <br><br>
+
+  💰 <b>Net saving:</b>
+  <span style="color:${netSaving >= 0 ? '#16a34a' : '#dc2626'}; font-weight:600">
+    ₹${formatNumber(netSaving)}
+  </span>
+`;
+
 
   box.style.display = "block";
 }
