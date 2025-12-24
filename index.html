@@ -531,8 +531,13 @@ header,
 
   box-shadow: 0 10px 24px rgba(16,185,129,0.25);
 }
-
-
+/* Highlight rows with no credit & no debit */
+.missing-amount {
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 700;
+  border-left: 4px solid #fb923c;
+}
 
 </style>
 </head>
@@ -1402,16 +1407,32 @@ function merchantWise(){
       <th>Debit</th>
     </tr>`;
 
-  rows.forEach(r=>{
-    const merchantSafe = (r.merchant && String(r.merchant)) || "-";
-    html += `
-      <tr class="table-row-highlight">
-        <td>${r.dateLabel}</td>
-        <td data-original="${escapeHtml(merchantSafe)}">${escapeHtml(merchantSafe)}</td>
-        <td class="${r.credit>0 ? "credit-cell" : ""}">${r.credit>0 ? "₹" + formatNumber(r.credit) : "-"}</td>
-        <td class="${r.debit>0 ? "debit-cell" : ""}">${r.debit>0 ? "₹" + formatNumber(r.debit) : "-"}</td>
-      </tr>`;
-  });
+   rows.forEach(r=>{
+   const merchantSafe = (r.merchant && String(r.merchant)) || "-";
+
+  const noAmount = r.credit === 0 && r.debit === 0;
+
+  html += `
+    <tr class="table-row-highlight">
+      <td>${r.dateLabel}</td>
+
+      <td 
+        class="${noAmount ? "missing-amount" : ""}"
+        data-original="${escapeHtml(merchantSafe)}"
+      >
+        ${escapeHtml(merchantSafe)}
+      </td>
+
+      <td class="${r.credit>0 ? "credit-cell" : ""}">
+        ${r.credit>0 ? "₹" + formatNumber(r.credit) : "-"}
+      </td>
+
+      <td class="${r.debit>0 ? "debit-cell" : ""}">
+        ${r.debit>0 ? "₹" + formatNumber(r.debit) : "-"}
+      </td>
+    </tr>`;
+ });
+
 
   merchantTable.innerHTML = html;
 }
@@ -1419,17 +1440,23 @@ function merchantWiseWithData(data) {
   const rows = [];
 
   data.forEach(r => {
-    const d = parseDate(getValue(r,"date"));
+    const d = parseDate(getValue(r, "date"));
+
     rows.push({
       date: d,
-      dateLabel: d.toLocaleDateString("en-GB",{day:"2-digit", month:"short", year:"numeric"}),
-      merchant: getValue(r,"merchant name"),
-      credit: +getValue(r,"credit") || 0,
-      debit: +getValue(r,"debit") || 0
+      dateLabel: d.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      }),
+      merchant: getValue(r, "merchant name"),
+      credit: +getValue(r, "credit") || 0,
+      debit: +getValue(r, "debit") || 0
     });
   });
 
-  rows.sort((a,b) => a.date - b.date);
+  // Sort by date
+  rows.sort((a, b) => a.date - b.date);
 
   let html = `
     <tr>
@@ -1437,25 +1464,38 @@ function merchantWiseWithData(data) {
       <th>Merchant</th>
       <th>Credit</th>
       <th>Debit</th>
-    </tr>`;
+    </tr>
+  `;
 
   rows.forEach(r => {
     const merchantSafe = r.merchant || "-";
+
+    // ✅ CHECK FOR MISSING CREDIT & DEBIT
+    const noAmount = r.credit === 0 && r.debit === 0;
+
     html += `
       <tr class="table-row-highlight">
         <td>${r.dateLabel}</td>
-        <td>${escapeHtml(merchantSafe)}</td>
-        <td class="${r.credit>0 ? "credit-cell" : ""}">
-          ${r.credit>0 ? "₹"+formatNumber(r.credit) : "-"}
+
+        <!-- Highlight merchant name if credit & debit are both missing -->
+        <td class="${noAmount ? "missing-amount" : ""}">
+          ${escapeHtml(merchantSafe)}
         </td>
-        <td class="${r.debit>0 ? "debit-cell" : ""}">
-          ${r.debit>0 ? "₹"+formatNumber(r.debit) : "-"}
+
+        <td class="${r.credit > 0 ? "credit-cell" : ""}">
+          ${r.credit > 0 ? "₹" + formatNumber(r.credit) : "-"}
         </td>
-      </tr>`;
+
+        <td class="${r.debit > 0 ? "debit-cell" : ""}">
+          ${r.debit > 0 ? "₹" + formatNumber(r.debit) : "-"}
+        </td>
+      </tr>
+    `;
   });
 
   merchantTable.innerHTML = html;
 }
+
 function syncDatePickerLimits() {
   const dateInput = document.getElementById("dateFilter");
   if (!dateInput || filteredData.length === 0) {
