@@ -1691,7 +1691,15 @@ function merchantWiseWithData(data) {
   });
 
   // Sort by date
-  rows.sort((a, b) => a.date - b.date);
+  // ✅ Sort alphabetically by merchant name (A → Z)
+  rows.sort((a, b) =>
+  String(a.merchant || "").localeCompare(
+    String(b.merchant || ""),
+    "en",
+    { sensitivity: "base" }
+  )
+  );
+
 
   let html = `
     <tr>
