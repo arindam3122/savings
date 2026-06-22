@@ -1334,8 +1334,10 @@ function monthWise() {
             </svg>
           </span>`;
 
-      monthTable.innerHTML += `
-        <tr class="month-row-hover">
+          monthTable.innerHTML += `
+           <tr class="month-row-hover"
+           onclick="filterByMonth(${v.date.getMonth()}, ${v.date.getFullYear()})"
+           style="cursor:pointer">
           <td><b>${label}</b></td>
           <td class="month-credit">₹${formatNumber(v.credit)}</td>
           <td class="month-debit">₹${formatNumber(v.debit)}</td>
@@ -1351,7 +1353,7 @@ function monthWise() {
   if (monthChart) monthChart.destroy();
 
   // Month-wise Savings Chart (NO SHADING, GREEN LABELS)
-monthChart = new Chart(document.getElementById("monthChart"), {
+ monthChart = new Chart(document.getElementById("monthChart"), {
   type: "line",
   data: {
     labels,
@@ -1443,7 +1445,101 @@ monthChart = new Chart(document.getElementById("monthChart"), {
       easing: "easeOutQuart"
     }
   }
-});
+ });
+}
+function dailyMonthChart(month, year) {
+  const dayMap = {};
+
+  // Group selected month data day-wise
+  filteredData.forEach(r => {
+    const d = parseDate(getValue(r, "date"));
+    const day = d.getDate();
+
+    if (!dayMap[day]) {
+      dayMap[day] = { credit: 0, debit: 0 };
+    }
+
+    dayMap[day].credit += +getValue(r, "credit") || 0;
+    dayMap[day].debit += +getValue(r, "debit") || 0;
+  });
+
+  const labels = [];
+  const values = [];
+
+  Object.keys(dayMap)
+    .sort((a, b) => a - b)
+    .forEach(day => {
+      labels.push(`Day ${day}`);
+      values.push(dayMap[day].credit - dayMap[day].debit);
+    });
+
+  if (monthChart) monthChart.destroy();
+
+  monthChart = new Chart(document.getElementById("monthChart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "Daily Net Saving",
+        data: values,
+        borderWidth: 3,
+        tension: 0.4,
+        fill: false,
+        pointRadius: 6,
+        pointBackgroundColor: ctx =>
+          ctx.raw >= 0 ? "#22c55e" : "#ef4444",
+
+        segment: {
+          borderColor: ctx =>
+            ctx.p1.parsed.y >= 0 ? "#22c55e" : "#ef4444"
+        },
+
+        datalabels: {
+          align: "top",
+          anchor: "end",
+          formatter: v => "₹" + formatNumber(v)
+        }
+      }]
+    },
+    plugins: [ChartDataLabels],
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+}
+function filterByMonth(month, year) {
+  // Filter only selected month + year
+  filteredData = rawData.filter(r => {
+    const d = parseDate(getValue(r, "date"));
+    return d.getMonth() === month && d.getFullYear() === year;
+  });
+
+  // Auto update dropdowns
+  yearFilter.value = year;
+  monthFilter.value = month;
+
+  // Update all dashboard sections
+ totals();
+ merchantWise();
+ weeklyWise();
+ dailyMonthChart(month, year);
+ generateAIInsight();
+
+  // Highlight selected month
+  document.querySelectorAll("#monthTable tr").forEach(row => {
+    row.style.background = "";
+  });
+
+  event.currentTarget.style.background = "#eef2ff";
+
+  showToast(
+    `📅 Showing data for ${new Date(year, month).toLocaleString("en", {
+      month: "long",
+      year: "numeric"
+    })}`,
+    "success"
+  );
 }
 /* --- Weekly chart --- */
 function weeklyWise() {
