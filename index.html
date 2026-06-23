@@ -768,7 +768,24 @@ tr:has(.missing-amount):hover {
 <!-- ---------------- MONTH TABLE + CHART ---------------- -->
 <div class="section">
   <h3>📈 Month-wise Savings Trend</h3>
+
   <table id="monthTable"></table>
+
+  <div style="text-align:center;margin:16px 0;">
+    <button id="loadMoreMonthsBtn"
+            onclick="loadMoreMonths()"
+            style="
+              padding:10px 22px;
+              border:none;
+              border-radius:12px;
+              background:#4f46e5;
+              color:white;
+              cursor:pointer;
+              font-weight:600;">
+      Load More
+    </button>
+  </div>
+
   <canvas id="monthChart"></canvas>
 </div>
 
@@ -833,9 +850,10 @@ tr:has(.missing-amount):hover {
 
 <!-- ---------------- SCRIPT (UNCHANGED LOGIC) ---------------- -->
 <script>
+  let rawData = [], filteredData = [], monthChart, weeklyChart;
 
-let rawData = [], filteredData = [], monthChart, weeklyChart;
-
+ let monthRowsData = [];
+ let visibleMonthRows = 6;
 /* ================= AUTO FILTER SETUP ================= */
 
 // Disable month until year is selected
@@ -1288,6 +1306,7 @@ function showNoSearchResult(count) {
 
 /* --- Month-wise --- */
 function monthWise() {
+  visibleMonthRows = 6;
   const map = {};
 
   // Aggregate month-wise credit & debit
@@ -1317,57 +1336,26 @@ function monthWise() {
     </tr>
   `;
 
-  const labels = [];
-  const savingValues = [];
+const labels = [];
+const savingValues = [];
 
-  // Build table rows
-  Object.values(map)
-    .sort((a, b) => a.date - b.date)
-    .forEach(v => {
-      const saving = v.credit - v.debit;
-      const isPositive = saving >= 0;
+monthRowsData = Object.values(map)
+  .sort((a, b) => a.date - b.date); // chart oldest → newest
 
-      const label = v.date.toLocaleString("en", {
-        month: "short",
-        year: "numeric"
-      });
+monthRowsData.forEach(v => {
 
-      labels.push(label);
-      savingValues.push(Number(saving.toFixed(2)));
+  const saving = v.credit - v.debit;
 
-      const savingClass = isPositive
-        ? "month-saving-positive"
-        : "month-saving-negative";
+  const label = v.date.toLocaleString("en", {
+    month: "short",
+    year: "numeric"
+  });
 
-      const arrow = isPositive
-        ? `<span class="saving-arrow">
-            <svg stroke="#16a34a" stroke-width="2.5" fill="none" viewBox="0 0 24 24">
-              <path d="M12 19V5"/>
-              <path d="M5 12l7-7 7 7"/>
-            </svg>
-          </span>`
-        : `<span class="saving-arrow">
-            <svg stroke="#dc2626" stroke-width="2.5" fill="none" viewBox="0 0 24 24">
-              <path d="M12 5v14"/>
-              <path d="M19 12l-7 7-7-7"/>
-            </svg>
-          </span>`;
+  labels.push(label);
+  savingValues.push(Number(saving.toFixed(2)));
+});
 
-          monthTable.innerHTML += `
-           <tr class="month-row-hover"
-           onclick="filterByMonth(${v.date.getMonth()}, ${v.date.getFullYear()})"
-           style="cursor:pointer">
-          <td><b>${label}</b></td>
-          <td class="month-credit">₹${formatNumber(v.credit)}</td>
-          <td class="month-debit">₹${formatNumber(v.debit)}</td>
-          <td class="${savingClass}">
-            ₹${formatNumber(saving)}
-            ${arrow}
-          </td>
-        </tr>
-      `;
-    });
-
+renderMonthRows();
   // Destroy previous chart
   if (monthChart) monthChart.destroy();
 
@@ -1465,6 +1453,70 @@ function monthWise() {
     }
   }
  });
+}
+function renderMonthRows() {
+
+  monthTable.innerHTML = `
+    <tr>
+      <th>Month</th>
+      <th>Credit</th>
+      <th>Debit</th>
+      <th>Saving</th>
+    </tr>
+  `;
+
+  const rowsToShow = monthRowsData.slice(0, visibleMonthRows);
+
+  rowsToShow.forEach(v => {
+
+    const saving = v.credit - v.debit;
+
+    const positive = saving >= 0;
+
+    const label = v.date.toLocaleString("en", {
+      month: "short",
+      year: "numeric"
+    });
+
+    monthTable.innerHTML += `
+      <tr class="month-row-hover"
+          onclick="filterByMonth(${v.date.getMonth()}, ${v.date.getFullYear()})"
+          style="cursor:pointer">
+
+        <td><b>${label}</b></td>
+
+        <td class="month-credit">
+          ₹${formatNumber(v.credit)}
+        </td>
+
+        <td class="month-debit">
+          ₹${formatNumber(v.debit)}
+        </td>
+
+        <td class="${
+          positive
+          ? "month-saving-positive"
+          : "month-saving-negative"
+        }">
+          ₹${formatNumber(saving)}
+        </td>
+
+      </tr>
+    `;
+  });
+
+  const btn = document.getElementById("loadMoreMonthsBtn");
+
+  if (visibleMonthRows >= monthRowsData.length) {
+    btn.style.display = "none";
+  } else {
+    btn.style.display = "inline-block";
+  }
+}
+
+function loadMoreMonths() {
+  visibleMonthRows += 6;
+  renderMonthRows();
 }
 function dailyMonthChart(month, year) {
   const dayMap = {};
