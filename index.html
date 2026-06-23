@@ -6,6 +6,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
@@ -650,7 +652,22 @@ tr:has(.missing-amount):hover {
   cursor: not-allowed;
   box-shadow: none;
 }
+#downloadPdfBtn {
+  padding: 14px 26px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 18px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: white;
+  box-shadow: 0 12px 28px rgba(22,163,74,0.35);
+  transition: all 0.25s ease;
+}
 
+#downloadPdfBtn:hover {
+  transform: translateY(-3px);
+}
 </style>
 </head>
 <body>
@@ -725,7 +742,9 @@ tr:has(.missing-amount):hover {
  >
   Reset Filter
 </button>
-
+<button onclick="downloadMonthlyPDF()" id="downloadPdfBtn">
+  📄 Download Statement
+</button>
 </div>
 
 <!-- ---------------- SUMMARY CARDS ---------------- -->
@@ -2049,7 +2068,136 @@ function showToast(message, type = "success") {
     toast.classList.remove("show");
   }, 3500);
 }
+function downloadMonthlyPDF() {
+  if (!yearFilter.value || monthFilter.value === "") {
+    showToast("⚠️ Please select a month first", "error");
+    return;
+  }
 
+  // Force daily graph
+  dailyMonthChart(Number(monthFilter.value), Number(yearFilter.value));
+
+  setTimeout(() => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF("p", "mm", "a4");
+
+    const monthName = new Date(0, monthFilter.value).toLocaleString("en", {
+      month: "long"
+    });
+
+    const primary = [79, 70, 229];
+    const green = [22, 163, 74];
+    const red = [220, 38, 38];
+
+    // HEADER
+    doc.setFillColor(...primary);
+    doc.rect(0, 0, 210, 25, "F");
+
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(18);
+    doc.text("Expense & Savings Statement", 14, 15);
+
+    doc.setFontSize(11);
+    doc.text(`${monthName} ${yearFilter.value}`, 14, 22);
+
+    // TOTALS
+    let totalCredit = 0;
+    let totalDebit = 0;
+
+    filteredData.forEach(r => {
+      totalCredit += Number(getValue(r, "credit")) || 0;
+      totalDebit += Number(getValue(r, "debit")) || 0;
+    });
+
+    const netSaving = totalCredit - totalDebit;
+
+// SUMMARY CARDS (SITE STYLE)
+
+// Credit card
+doc.setFillColor(240, 253, 244);
+doc.roundedRect(14, 32, 58, 20, 3, 3, "F");
+doc.setTextColor(...green);
+doc.setFontSize(11);
+doc.text("Total Credit", 18, 40);
+doc.setFontSize(14);
+doc.text("\u20B9 " + formatNumber(totalCredit), 18, 47);
+
+// Debit card
+doc.setFillColor(254, 242, 242);
+doc.roundedRect(78, 32, 58, 20, 3, 3, "F");
+doc.setTextColor(...red);
+doc.setFontSize(11);
+doc.text("Total Debit", 82, 40);
+doc.setFontSize(14);
+doc.text("\u20B9 " + formatNumber(totalDebit), 82, 47);
+
+// Net saving card
+doc.setFillColor(238, 242, 255);
+doc.roundedRect(142, 32, 58, 20, 3, 3, "F");
+doc.setTextColor(...primary);
+doc.setFontSize(11);
+doc.text("Net Saving", 146, 40);
+doc.setFontSize(14);
+doc.text("\u20B9 " + formatNumber(netSaving), 146, 47);
+
+    // CHART
+    const canvas = document.getElementById("monthChart");
+
+    if (canvas) {
+      const imgData = canvas.toDataURL("image/png");
+      doc.addImage(imgData, "PNG", 15, 60, 180, 72);
+    }
+
+    // TABLE DATA
+const rows = filteredData.map(r => [
+  parseDate(getValue(r, "date")).toLocaleDateString("en-GB"),
+  String(getValue(r, "merchant name") || "-"),
+  getValue(r, "credit")
+    ? "\u20B9 " + formatNumber(Number(getValue(r, "credit")))
+    : "-",
+  getValue(r, "debit")
+    ? "\u20B9 " + formatNumber(Number(getValue(r, "debit")))
+    : "-"
+]);
+
+    // TABLE
+    doc.autoTable({
+  startY: 140,
+  head: [["Date", "Merchant", "Credit", "Debit"]],
+  body: rows,
+
+  theme: "grid",
+
+  headStyles: {
+    fillColor: primary,
+    textColor: [255, 255, 255],
+    fontStyle: "bold"
+  },
+
+  didParseCell: function(data) {
+    // Credit column
+    if (data.section === "body" && data.column.index === 2) {
+      data.cell.styles.textColor = [22, 163, 74];
+    }
+
+    // Debit column
+    if (data.section === "body" && data.column.index === 3) {
+      data.cell.styles.textColor = [220, 38, 38];
+    }
+  },
+  styles: {
+  fontSize: 10,
+  cellPadding: 4,
+  fontStyle: "bold"
+ }
+});
+
+    doc.save(`${monthName}-${yearFilter.value}-Statement.pdf`);
+
+    showToast("✅ PDF Downloaded", "success");
+
+  }, 1000);
+}
 </script>
 <!-- Upload toast -->
 <div id="uploadToast"></div>
