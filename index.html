@@ -833,6 +833,28 @@ tr:has(.missing-amount):hover {
  </div>
 
   <table id="merchantTable"></table>
+  <div id="pagination"
+     style="
+      display:flex;
+      justify-content:center;
+      gap:12px;
+      margin-top:20px;
+      align-items:center;
+     ">
+
+  <button onclick="prevPage()">
+    ◀ Previous
+  </button>
+
+  <span id="pageInfo">
+    Page 1
+  </span>
+
+  <button onclick="nextPage()">
+    Next ▶
+  </button>
+
+</div>
   <div 
   id="noSearchResult"
   style="
@@ -855,9 +877,12 @@ tr:has(.missing-amount):hover {
 <!-- ---------------- SCRIPT (UNCHANGED LOGIC) ---------------- -->
 <script>
   let rawData = [], filteredData = [], monthChart, weeklyChart;
-
  let monthRowsData = [];
  let visibleMonthRows = 6;
+
+// PAGINATION
+let currentPage = 1;
+const PAGE_SIZE = 100;
 /* ================= AUTO FILTER SETUP ================= */
 
 // Disable month until year is selected
@@ -1150,7 +1175,7 @@ function applyDateFilter() {
       showToast("⚠️ No data for selected date", "error");
       return;
     }
-
+    currentPage = 1;
     /* ---------- RENDER TABLE ---------- */
     merchantWiseWithData(result);
     // Show totals bar
@@ -1183,7 +1208,7 @@ function resetDateFilter() {
     return (!yearFilter.value || d.getFullYear() == yearFilter.value)
         && (!monthFilter.value || d.getMonth() == monthFilter.value);
   });
-
+  currentPage = 1;
   renderAll();
   initDatePicker();
   syncDatePickerLimits();
@@ -1198,6 +1223,7 @@ function resetDateFilter() {
   filterLoader.classList.add("show");
 
   setTimeout(() => {
+    currentPage = 1;
     filteredData = rawData.filter(r => {
       const d = parseDate(getValue(r,"date"));
       return (!yearFilter.value || d.getFullYear() == yearFilter.value)
@@ -1812,9 +1838,12 @@ function filterTransactionsByWeek(weekIndex) {
   // re-render full dashboard with new filtered data
   renderAll();
 }
+function getPagedRows(rows){
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
 
-
-
+  return rows.slice(start, end);
+}
 /* --- Merchant table --- */
 function merchantWise(){
   const rows = [];
@@ -1840,7 +1869,7 @@ function merchantWise(){
       <th>Debit</th>
     </tr>`;
 
-   rows.forEach(r=>{
+   getPagedRows(rows).forEach(r=>{
    const merchantSafe = (r.merchant && String(r.merchant)) || "-";
 
   const noAmount = r.credit === 0 && r.debit === 0;
@@ -1871,6 +1900,32 @@ function merchantWise(){
 
   merchantTable.innerHTML = html;
   calculateTotals();
+  const totalPages = Math.max(
+  1,
+  Math.ceil(rows.length / PAGE_SIZE)
+);
+
+document.getElementById("pageInfo").innerText =
+  `Page ${currentPage} of ${totalPages}`;
+}
+function nextPage(){
+
+  const totalPages = Math.ceil(
+    filteredData.length / PAGE_SIZE
+  );
+
+  if(currentPage < totalPages){
+    currentPage++;
+    merchantWise();
+  }
+}
+
+function prevPage(){
+
+  if(currentPage > 1){
+    currentPage--;
+    merchantWise();
+  }
 }
 function merchantWiseWithData(data) {
   const rows = [];
