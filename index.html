@@ -737,6 +737,18 @@ tr:has(.missing-amount):hover {
   box-shadow:
     0 12px 28px rgba(79,70,229,.15);
 }
+.page-btn:disabled{
+  background:#d1d5db;
+  color:#9ca3af;
+  cursor:not-allowed;
+  box-shadow:none;
+  transform:none;
+}
+
+.page-btn:disabled:hover{
+  transform:none;
+  box-shadow:none;
+}
 </style>
 </head>
 <body>
@@ -903,7 +915,9 @@ tr:has(.missing-amount):hover {
  </div>
 
   <table id="merchantTable"></table>
-  <div id="pagination" class="pagination-container">
+  <div id="pagination"
+     class="pagination-container"
+     style="display:none;">
 
   <button class="page-btn" onclick="prevPage()">
     ◀ Previous
@@ -1127,7 +1141,7 @@ async function loadExcel(file){
     renderAll();
     initDatePicker();
     syncDatePickerLimits();
-
+    document.getElementById("pagination").style.display = "flex";
     document.getElementById("loadMoreMonthsBtn").style.display = "inline-block";
     uploadContent.innerHTML = '<div class="upload-icon">✅</div>';
     uploadStatus.innerHTML = `<span class="success">Loaded ${file.name}</span>`;
@@ -1971,6 +1985,24 @@ function merchantWise(){
 
 document.getElementById("pageInfo").innerText =
   `Page ${currentPage} of ${totalPages}`;
+
+const prevBtn = document.querySelector(
+  "#pagination button:first-child"
+);
+
+const nextBtn = document.querySelector(
+  "#pagination button:last-child"
+);
+
+// Disable Previous on first page
+prevBtn.disabled = currentPage === 1;
+
+// Disable Next on last page
+nextBtn.disabled = currentPage === totalPages;
+
+// Hide entire pagination if only 1 page
+document.getElementById("pagination").style.display =
+  totalPages === 1 ? "none" : "flex";
 }
 function nextPage(){
 
