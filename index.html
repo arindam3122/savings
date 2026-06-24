@@ -959,7 +959,7 @@ tr:has(.missing-amount):hover {
 
 // PAGINATION
 let currentPage = 1;
-const PAGE_SIZE = 100;
+const PAGE_SIZE = 20;
 /* ================= AUTO FILTER SETUP ================= */
 
 // Disable month until year is selected
@@ -1983,8 +1983,15 @@ function merchantWise(){
   Math.ceil(rows.length / PAGE_SIZE)
 );
 
+const startRow = ((currentPage - 1) * PAGE_SIZE) + 1;
+
+const endRow = Math.min(
+  currentPage * PAGE_SIZE,
+  rows.length
+);
+
 document.getElementById("pageInfo").innerText =
-  `Page ${currentPage} of ${totalPages}`;
+  `${startRow}-${endRow} of ${rows.length} • Page ${currentPage}/${totalPages}`;
 
 const prevBtn = document.querySelector(
   "#pagination button:first-child"
