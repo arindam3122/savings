@@ -336,14 +336,14 @@ header,
 }
 
 .saving-arrow {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 6px;
+  display:inline-flex;
+  align-items:center;
+  margin-left:6px;
 }
 
 .saving-arrow svg {
-  width: 16px;
-  height: 16px;
+  width:16px;
+  height:16px;
 }
 /* Upload toast (success + error) */
 #uploadToast {
@@ -742,7 +742,11 @@ tr:has(.missing-amount):hover {
  >
   Reset Filter
 </button>
-<button onclick="downloadMonthlyPDF()" id="downloadPdfBtn">
+<button
+  onclick="downloadMonthlyPDF()"
+  id="downloadPdfBtn"
+  style="display:none;"
+>
   📄 Download Statement
 </button>
 </div>
@@ -876,25 +880,25 @@ function autoApplyFilter() {
 
   // Apply filter only when both selected
   if (yearFilter.value && monthFilter.value !== "") {
+
+    document.getElementById("downloadPdfBtn").style.display = "inline-block";
+
     applyFilter();
   }
 }
 
 function resetFilters() {
+
   yearFilter.value = "";
   monthFilter.value = "";
   monthFilter.disabled = true;
 
+  document.getElementById("downloadPdfBtn").style.display = "none";
+
   filteredData = rawData;
 
   renderAll();
-  initDatePicker();
-  syncDatePickerLimits();
-
-  showToast("🔄 Filters reset — showing all months", "success");
 }
-
-
 /* --- Helpers --- */
 function formatNumber(n){ return n.toLocaleString("en-IN",{ minimumFractionDigits: 2 }); }
 function getValue(row, key){
@@ -1339,10 +1343,11 @@ function monthWise() {
 const labels = [];
 const savingValues = [];
 
-monthRowsData = Object.values(map)
-  .sort((a, b) => a.date - b.date); // chart oldest → newest
+const sortedMonths = Object.values(map)
+  .sort((a, b) => a.date - b.date); // oldest → newest
 
-monthRowsData.forEach(v => {
+monthRowsData = [...sortedMonths].reverse(); // table only
+sortedMonths.forEach(v => {
 
   const saving = v.credit - v.debit;
 
@@ -1492,15 +1497,43 @@ function renderMonthRows() {
         <td class="month-debit">
           ₹${formatNumber(v.debit)}
         </td>
-
         <td class="${
-          positive
-          ? "month-saving-positive"
-          : "month-saving-negative"
-        }">
-          ₹${formatNumber(saving)}
-        </td>
+  positive
+  ? "month-saving-positive"
+  : "month-saving-negative"
+}">
+  ₹${formatNumber(saving)}
 
+  <span class="saving-arrow">
+    ${
+      positive
+      ?
+      `
+      <svg viewBox="0 0 24 24"
+           fill="none"
+           stroke="#16a34a"
+           stroke-width="3"
+           stroke-linecap="round"
+           stroke-linejoin="round">
+        <path d="M12 19V5"/>
+        <path d="M5 12l7-7 7 7"/>
+      </svg>
+      `
+      :
+      `
+      <svg viewBox="0 0 24 24"
+           fill="none"
+           stroke="#dc2626"
+           stroke-width="3"
+           stroke-linecap="round"
+           stroke-linejoin="round">
+        <path d="M12 5v14"/>
+        <path d="M19 12l-7 7-7-7"/>
+      </svg>
+      `
+    }
+  </span>
+</td>
       </tr>
     `;
   });
@@ -1580,6 +1613,7 @@ function dailyMonthChart(month, year) {
   });
 }
 function filterByMonth(month, year) {
+  document.getElementById("downloadPdfBtn").style.display = "inline-block";
   // Filter only selected month + year
   filteredData = rawData.filter(r => {
     const d = parseDate(getValue(r, "date"));
