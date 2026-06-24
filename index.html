@@ -668,6 +668,75 @@ tr:has(.missing-amount):hover {
 #downloadPdfBtn:hover {
   transform: translateY(-3px);
 }
+/* ================= PAGINATION ================= */
+
+.pagination-container{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:16px;
+  margin-top:28px;
+}
+
+/* Previous / Next buttons */
+.page-btn{
+  padding:12px 22px;
+  border:none;
+  border-radius:14px;
+
+  background:linear-gradient(
+    135deg,
+    #4f46e5,
+    #6366f1
+  );
+
+  color:white;
+  font-size:14px;
+  font-weight:600;
+
+  cursor:pointer;
+
+  box-shadow:
+    0 10px 24px rgba(79,70,229,0.30);
+
+  transition:all .25s ease;
+}
+
+.page-btn:hover{
+  transform:translateY(-3px);
+  box-shadow:
+    0 16px 34px rgba(79,70,229,0.40);
+}
+
+.page-btn:active{
+  transform:scale(.96);
+}
+
+/* Page number badge */
+.page-badge{
+  min-width:160px;
+  text-align:center;
+
+  padding:12px 18px;
+
+  background:linear-gradient(
+    135deg,
+    #eef2ff,
+    #ffffff
+  );
+
+  color:#4338ca;
+
+  font-size:15px;
+  font-weight:700;
+
+  border-radius:50px;
+
+  border:2px solid #c7d2fe;
+
+  box-shadow:
+    0 12px 28px rgba(79,70,229,.15);
+}
 </style>
 </head>
 <body>
@@ -834,24 +903,17 @@ tr:has(.missing-amount):hover {
  </div>
 
   <table id="merchantTable"></table>
-  <div id="pagination"
-     style="
-      display:flex;
-      justify-content:center;
-      gap:12px;
-      margin-top:20px;
-      align-items:center;
-     ">
+  <div id="pagination" class="pagination-container">
 
-  <button onclick="prevPage()">
+  <button class="page-btn" onclick="prevPage()">
     ◀ Previous
   </button>
 
-  <span id="pageInfo">
+  <span id="pageInfo" class="page-badge">
     Page 1
   </span>
 
-  <button onclick="nextPage()">
+  <button class="page-btn" onclick="nextPage()">
     Next ▶
   </button>
 
