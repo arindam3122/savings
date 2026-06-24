@@ -777,17 +777,18 @@ tr:has(.missing-amount):hover {
 
   <div style="text-align:center;margin:16px 0;">
     <button id="loadMoreMonthsBtn"
-            onclick="loadMoreMonths()"
-            style="
-              padding:10px 22px;
-              border:none;
-              border-radius:12px;
-              background:#4f46e5;
-              color:white;
-              cursor:pointer;
-              font-weight:600;">
-      Load More
-    </button>
+        onclick="loadMoreMonths()"
+        style="
+          display:none;
+          padding:10px 22px;
+          border:none;
+          border-radius:12px;
+          background:#4f46e5;
+          color:white;
+          cursor:pointer;
+          font-weight:600;">
+  Load More
+</button>
   </div>
 
   <canvas id="monthChart"></canvas>
@@ -1065,6 +1066,7 @@ async function loadExcel(file){
     initDatePicker();
     syncDatePickerLimits();
 
+    document.getElementById("loadMoreMonthsBtn").style.display = "inline-block";
     uploadContent.innerHTML = '<div class="upload-icon">✅</div>';
     uploadStatus.innerHTML = `<span class="success">Loaded ${file.name}</span>`;
     filterLoader.classList.remove("show");
